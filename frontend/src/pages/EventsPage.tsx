@@ -12,17 +12,14 @@ export function EventsPage() {
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border bg-card p-4 flex flex-col">
-        <Link to="/" className="flex items-center gap-2 mb-8">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-            <Calendar className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="text-lg font-semibold">Alyne</span>
+        <Link to="/" className="flex items-center mb-8">
+          <img src="/alyne-logo.svg" alt="Alyne" className="h-6" />
         </Link>
 
         <nav className="space-y-1 flex-1">
           <NavItem href="/dashboard" icon={<Calendar className="h-4 w-4" />} label="Dashboard" />
           <NavItem href="/teams" icon={<Users className="h-4 w-4" />} label="Teams" />
-          <NavItem href="/events" icon={<Clock className="h-4 w-4" />} label="Events" active />
+          <NavItem href="/events" icon={<Calendar className="h-4 w-4" />} label="Events" active />
         </nav>
 
         <div className="pt-4 border-t border-border">

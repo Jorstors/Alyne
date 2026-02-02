@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Calendar, Users, Clock, ArrowRight, CheckCircle } from 'lucide-react'
+import { Users, Clock, ArrowRight, Menu, X, Calendar } from 'lucide-react'
+import { useState } from 'react'
 
 export function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -12,7 +15,8 @@ export function LandingPage() {
             <img src="/alyne-logo.svg" alt="Alyne" className="h-6" />
           </Link>
 
-          <div className="flex items-center gap-4">
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-4">
             <Link to="/event/new">
               <Button variant="ghost" size="sm">Quick Event</Button>
             </Link>
@@ -23,11 +27,38 @@ export function LandingPage() {
               <Button size="sm">Get Started</Button>
             </Link>
           </div>
+
+          {/* Mobile menu button */}
+          <button
+            className="md:hidden p-2 -mr-2"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
+
+        {/* Mobile menu dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border/40 bg-background/95 backdrop-blur-xl">
+            <div className="px-6 py-4 space-y-3">
+              <Link to="/event/new" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">Quick Event</Button>
+              </Link>
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">Log in</Button>
+              </Link>
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                <Button className="w-full">Get Started</Button>
+              </Link>
+            </div>
+          </div>
+        )}
       </nav>
 
+
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
+      <section className="pt-32 pb-20 md:pt-48 md:pb-32 lg:pt-56 lg:pb-40 px-6">
         <div className="mx-auto max-w-4xl text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 rounded-full border border-border bg-muted/50 text-sm text-muted-foreground">
             <span className="relative flex h-2 w-2">

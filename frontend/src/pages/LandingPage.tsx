@@ -92,7 +92,7 @@ export function LandingPage() {
                   Create quick event
                 </Button>
               </Link>
-              <div className="absolute top-13 left-1/2 -translate-x-1/2 hidden sm:flex items-start gap-2 pointer-events-none">
+              <div className="absolute top-13 left-[45%] -translate-x-1/2 hidden sm:flex items-start gap-2 pointer-events-none opacity-70 scale-80">
                 <img
                   src="/fat-loopy-arrow.svg"
                   alt=""

@@ -86,11 +86,21 @@ export function LandingPage() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link to="/event/new">
-              <Button variant="outline" size="lg" className="min-w-[200px]">
-                Create quick event
-              </Button>
-            </Link>
+            <div className="relative">
+              <Link to="/event/new">
+                <Button variant="outline" size="lg" className="min-w-[200px]">
+                  Create quick event
+                </Button>
+              </Link>
+              <div className="absolute top-13 left-1/2 -translate-x-1/2 hidden sm:flex items-start gap-2 pointer-events-none">
+                <img
+                  src="/fat-loopy-arrow.svg"
+                  alt=""
+                  className="w-12 opacity-80 rotate-12 -scale-x-100 "
+                />
+                <span className="text-foreground/90 font-medium text-3xl -rotate-6 whitespace-nowrap" style={{ fontFamily: 'Caveat, cursive' }}>Try me!</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>

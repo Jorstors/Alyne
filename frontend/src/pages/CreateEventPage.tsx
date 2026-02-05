@@ -1,7 +1,8 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+
 import { Label } from '@/components/ui/label'
 import { ArrowLeft, Calendar as CalendarIcon, Users } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils"
 
 export function CreateEventPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [eventName, setEventName] = useState('')
   const [mode, setMode] = useState<'date' | 'days'>('date')
 
@@ -118,9 +120,16 @@ export function CreateEventPage() {
     timeOptions.push(`${i.toString().padStart(2, '0')}:30`)
   }
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false) // Default to anonymous for "Quick Event"
+
+
+
+
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Sidebar */}
+      {/* Sidebar - Only show if authenticated */}
+      {isAuthenticated && (
       <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border bg-card p-4 flex flex-col hidden md:flex">
         <Link to="/" className="flex items-center mb-8">
           <img src="/alyne-logo.svg" alt="Alyne" className="h-6" />
@@ -142,15 +151,20 @@ export function CreateEventPage() {
           </div>
         </div>
       </aside>
+      )}
 
       {/* Main Content */}
-      <main className="md:ml-64 p-8">
-         <div className="max-w-5xl mx-auto">
-          {/* Back Button */}
-          <Link to="/events" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Events
-          </Link>
+      <main className={cn("p-8 transition-all duration-300", isAuthenticated ? "md:ml-64" : "mx-auto")}>
+         <div className="max-w-5xl mx-auto relative">
+          {/* Header Actions */}
+           <div className="flex justify-between items-center mb-8">
+              <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Home
+              </Link>
+
+
+           </div>
 
           <form onSubmit={handleCreate} className="space-y-8">
             {/* Header / Event Name */}
@@ -162,6 +176,16 @@ export function CreateEventPage() {
                 className="text-4xl font-bold text-center border-none shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/50 h-auto py-2 px-4 max-w-2xl bg-transparent"
                 required
               />
+
+              {/* Team Context Message */}
+              {searchParams.get('teamId') && (
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                   <Users className="h-4 w-4" />
+                   Creating for Engineering Team
+                </div>
+              )}
+
+
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 items-start max-w-4xl mx-auto">

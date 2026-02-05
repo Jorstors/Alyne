@@ -45,19 +45,7 @@ export function DashboardPage() {
 
           {/* Quick Actions */}
           <div className="grid grid-cols-2 gap-4 mb-8">
-            <Link to="/events/new">
-              <Card className="hover:shadow-md transition-shadow cursor-pointer border-dashed border-2 hover:border-primary/50">
-                <CardContent className="flex items-center gap-4 p-6">
-                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                    <Plus className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Create Event</h3>
-                    <p className="text-sm text-muted-foreground">Schedule a new team event</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+
 
             <Link to="/teams/new">
               <Card className="hover:shadow-md transition-shadow cursor-pointer border-dashed border-2 hover:border-primary/50">

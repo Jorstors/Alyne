@@ -8,6 +8,7 @@ import {
   EventsPage,
   CreateEventPage,
   CreateTeamPage,
+  TeamDetailsPage,
   EventPage,
 } from '@/pages'
 
@@ -24,6 +25,7 @@ function App() {
         {/* Legacy / Auth routes */}
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/teams" element={<TeamsPage />} />
+        <Route path="/teams/:id" element={<TeamDetailsPage />} />
         <Route path="/teams/new" element={<CreateTeamPage />} />
         <Route path="/events" element={<EventsPage />} />
         {/* Redirect /events/new to /create or keep as authenticated create? For parity we use the new one */}

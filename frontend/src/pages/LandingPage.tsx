@@ -17,7 +17,7 @@ export function LandingPage() {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-4">
-            <Link to="/event/new">
+            <Link to="/create">
               <Button variant="ghost" size="sm">Quick Event</Button>
             </Link>
             <Link to="/login">
@@ -42,7 +42,7 @@ export function LandingPage() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-border/40 bg-background/95 backdrop-blur-xl">
             <div className="px-6 py-4 space-y-3">
-              <Link to="/event/new" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/create" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="ghost" className="w-full justify-start">Quick Event</Button>
               </Link>
               <Link to="/login" onClick={() => setMobileMenuOpen(false)}>

@@ -45,12 +45,7 @@ export function EventsPage() {
               <h1 className="text-2xl font-bold mb-1">Events</h1>
               <p className="text-muted-foreground">Manage all your team events</p>
             </div>
-            <Link to="/events/new">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                New Event
-              </Button>
-            </Link>
+
           </div>
 
           {/* Search */}

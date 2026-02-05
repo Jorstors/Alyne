@@ -8,7 +8,7 @@ import {
   EventsPage,
   CreateEventPage,
   CreateTeamPage,
-  AnonymousEventPage,
+  EventPage,
 } from '@/pages'
 
 function App() {
@@ -18,13 +18,15 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/event/new" element={<AnonymousEventPage />} />
+        <Route path="/create" element={<CreateEventPage />} />
+        <Route path="/event/:id" element={<EventPage />} />
 
-        {/* Protected routes (will add auth wrapper later) */}
+        {/* Legacy / Auth routes */}
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/teams" element={<TeamsPage />} />
         <Route path="/teams/new" element={<CreateTeamPage />} />
         <Route path="/events" element={<EventsPage />} />
+        {/* Redirect /events/new to /create or keep as authenticated create? For parity we use the new one */}
         <Route path="/events/new" element={<CreateEventPage />} />
       </Routes>
     </ScrollArea>

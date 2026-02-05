@@ -87,7 +87,7 @@ export function LandingPage() {
               </Button>
             </Link>
             <div className="relative">
-              <Link to="/event/new">
+              <Link to="/create">
                 <Button variant="outline" size="lg" className="min-w-[200px]">
                   Create quick event
                 </Button>

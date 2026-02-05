@@ -4,12 +4,12 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, Calendar as CalendarIcon, Users } from 'lucide-react'
+import { ArrowLeft, Calendar as CalendarIcon, Users, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Calendar } from '@/components/ui/calendar'
 import { useState } from 'react'
 import type { DateRange } from 'react-day-picker'
-import { addDays, format } from 'date-fns'
+import { addDays, format, addMonths, subMonths } from 'date-fns'
 import {
   Select,
   SelectContent,
@@ -31,6 +31,7 @@ export function CreateEventPage() {
     from: new Date(),
     to: addDays(new Date(), 4),
   })
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
 
   // Days Mode State
   const [selectedDays, setSelectedDays] = useState<string[]>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri'])
@@ -116,8 +117,20 @@ export function CreateEventPage() {
   // Generate time options
   const timeOptions = []
   for (let i = 0; i < 24; i++) {
-    timeOptions.push(`${i.toString().padStart(2, '0')}:00`)
-    timeOptions.push(`${i.toString().padStart(2, '0')}:30`)
+    const hour = i % 12 || 12
+    const ampm = i < 12 ? 'AM' : 'PM'
+
+    // Hour:00
+    timeOptions.push({
+        value: `${i.toString().padStart(2, '0')}:00`,
+        label: `${hour}:00 ${ampm}`
+    })
+
+    // Hour:30
+    timeOptions.push({
+        value: `${i.toString().padStart(2, '0')}:30`,
+        label: `${hour}:30 ${ampm}`
+    })
   }
 
   const [isAuthenticated, setIsAuthenticated] = useState(false) // Default to anonymous for "Quick Event"
@@ -154,7 +167,7 @@ export function CreateEventPage() {
       )}
 
       {/* Main Content */}
-      <main className={cn("p-8 transition-all duration-300", isAuthenticated ? "md:ml-64" : "mx-auto")}>
+      <main className={cn("p-4 md:p-8 transition-all duration-300", isAuthenticated ? "md:ml-64" : "mx-auto")}>
          <div className="max-w-5xl mx-auto relative">
           {/* Header Actions */}
            <div className="flex justify-between items-center mb-8">
@@ -188,16 +201,18 @@ export function CreateEventPage() {
 
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8 items-start max-w-4xl mx-auto">
+            {/* Columns Container */}
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+
               {/* Left Column: Dates/Days */}
               <div className="flex flex-col gap-4 w-full h-full">
-                <div className="text-center md:text-left space-y-4">
-                  <div className="flex items-center justify-center md:justify-start gap-4">
-                      <h3 className="text-lg font-medium">When is it happening?</h3>
-                  </div>
+                <div className="text-center md:text-left">
+                  <h3 className="text-lg font-medium">When is it happening?</h3>
+                </div>
 
-                  {/* Toggle */}
-                  <div className="flex bg-muted p-1 rounded-lg w-full max-w-xs mx-auto md:mx-0">
+                <Card className="p-4 border shadow-sm flex flex-col items-center flex-1 min-h-[350px]">
+                  {/* Toggle Inside Card for Alignment */}
+                   <div className="flex bg-muted p-1 rounded-lg w-full max-w-xs mb-6">
                     <button
                         type="button"
                         className={cn("flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all", mode === 'date' ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground")}
@@ -213,17 +228,48 @@ export function CreateEventPage() {
                         Days of Week
                     </button>
                   </div>
-                </div>
 
-                <Card className="p-4 border shadow-sm flex flex-col items-center justify-center flex-1 min-h-[350px]">
                   {mode === 'date' ? (
-                      <Calendar
-                        mode="range"
-                        selected={dateRange}
-                        onSelect={handleDateSelect}
-                        className="rounded-md border-none"
-                        numberOfMonths={1}
-                      />
+                      <div className="flex flex-col items-center">
+                          {/* Custom Static Navigation */}
+                          <div className="flex items-center justify-between w-full max-w-[260px] mb-2 px-1">
+                              <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}
+                              >
+                                  <ChevronLeft className="h-4 w-4" />
+                              </Button>
+                              <span className="text-sm font-medium">
+                                  {format(currentMonth, 'MMMM yyyy')}
+                              </span>
+                              <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}
+                              >
+                                  <ChevronRight className="h-4 w-4" />
+                              </Button>
+                          </div>
+
+                          <Calendar
+                            mode="range"
+                            selected={dateRange}
+                            onSelect={handleDateSelect}
+                            month={currentMonth}
+                            onMonthChange={setCurrentMonth}
+                            className="rounded-md border-none"
+                            numberOfMonths={1}
+                            classNames={{
+                                caption: 'hidden', // Hide default header (month year)
+                                nav: 'hidden'      // Hide default navigation arrows
+                            }}
+                          />
+                      </div>
                   ) : (
                       <div className="flex flex-col gap-3 w-full max-w-[200px]">
                           {daysOfWeek.map(day => (
@@ -245,6 +291,7 @@ export function CreateEventPage() {
                   )}
                 </Card>
 
+                {/* Footer Text */}
                 <div className="min-h-[20px]">
                     {mode === 'date' && dateRange?.from && (
                     <p className="text-sm text-muted-foreground text-center md:text-left">
@@ -262,9 +309,8 @@ export function CreateEventPage() {
 
               {/* Right Column: Times */}
               <div className="flex flex-col gap-4 w-full h-full">
-                 <div className="text-center md:text-left space-y-2">
-                  <h3 className="text-lg font-medium text-center md:text-left">What times might work?</h3>
-                   <p className="text-sm text-muted-foreground invisible">Placeholder</p>
+                 <div className="text-center md:text-left">
+                  <h3 className="text-lg font-medium">What times might work?</h3>
                 </div>
 
                 <Card className="p-6 border shadow-sm space-y-6 flex flex-col justify-center flex-1 min-h-[350px]">
@@ -278,9 +324,9 @@ export function CreateEventPage() {
                         <SelectValue placeholder="Select time" />
                       </SelectTrigger>
                       <SelectContent>
-                        {timeOptions.map((time) => (
-                          <SelectItem key={`start-${time}`} value={time}>
-                            {time}
+                        {timeOptions.map((t) => (
+                          <SelectItem key={`start-${t.value}`} value={t.value}>
+                            {t.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -297,9 +343,9 @@ export function CreateEventPage() {
                         <SelectValue placeholder="Select time" />
                       </SelectTrigger>
                       <SelectContent>
-                        {timeOptions.map((time) => (
-                          <SelectItem key={`end-${time}`} value={time}>
-                            {time}
+                        {timeOptions.map((t) => (
+                          <SelectItem key={`end-${t.value}`} value={t.value}>
+                            {t.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -316,22 +362,26 @@ export function CreateEventPage() {
                     </div>
                 </Card>
 
-                <div className="w-full flex justify-end">
-                  <div className="flex items-center gap-4">
-                    <span className="text-muted-foreground font-medium">Ready?</span>
-                    <Button
-                        type="submit"
-                        size="lg"
-                        disabled={
-                            !eventName ||
-                            (mode === 'date' && !dateRange?.from) ||
-                            (mode === 'days' && selectedDays.length === 0)
-                        }>
-                      Create Event
-                    </Button>
-                  </div>
-                </div>
+                {/* Empty Footer for Balance */}
+                <div className="min-h-[20px]"></div>
               </div>
+            </div>
+
+            {/* Bottom Action Bar */}
+            <div className="flex justify-end max-w-4xl mx-auto pt-4 border-t">
+                <div className="flex items-center gap-4">
+                <span className="text-muted-foreground font-medium">Ready?</span>
+                <Button
+                    type="submit"
+                    size="lg"
+                    disabled={
+                        !eventName ||
+                        (mode === 'date' && !dateRange?.from) ||
+                        (mode === 'days' && selectedDays.length === 0)
+                    }>
+                    Create Event
+                </Button>
+                </div>
             </div>
           </form>
         </div>

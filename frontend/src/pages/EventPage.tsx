@@ -15,7 +15,7 @@ export function EventPage() {
   const [isSignedIn, setIsSignedIn] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
 
-  // Availability State (Moved up to fix Hook Rule violation)
+  // Availability State
   const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set())
 
   const handleSlotToggle = (slotId: string, forceState?: 'add' | 'remove') => {
@@ -34,7 +34,6 @@ export function EventPage() {
   }
 
   // Parse Config
-  // Determine API URL (TODO: Share this constant)
   const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api')
 
   // Fetch Event Data
@@ -42,7 +41,7 @@ export function EventPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Columns State (Hydrated from backend data)
+  // Columns State
   const [columns, setColumns] = useState<{ label: string; subLabel?: string }[]>([])
 
   useEffect(() => {
@@ -59,11 +58,14 @@ export function EventPage() {
 
         if (event_type === 'days_of_week') {
              // Config: { days: ['Mon', 'Tue'] }
-             newColumns = configuration.days.map((d: string) => ({ label: d }))
+             if (configuration && configuration.days) {
+                 newColumns = configuration.days.map((d: string) => ({ label: d }))
+             } else {
+                  newColumns = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(d => ({ label: d }))
+             }
         } else {
              // Config: { dates: ['2025-02-10', '2025-02-11'] }
-             // Only if dates exists, otherwise fallback
-             if (configuration.dates && configuration.dates.length > 0) {
+             if (configuration && configuration.dates && configuration.dates.length > 0) {
                 newColumns = configuration.dates.map((d: string) => {
                      const date = parseISO(d)
                      return {
@@ -72,7 +74,6 @@ export function EventPage() {
                      }
                 })
              } else {
-                 // Fallback if data corrupted
                  newColumns = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(d => ({ label: d }))
              }
         }
@@ -100,29 +101,51 @@ export function EventPage() {
     setTimeout(() => setIsCopied(false), 2000)
   }
 
+  // State for interactive highlighting
+  const [hoveredSlot, setHoveredSlot] = useState<string | null>(null)
+
   // Group Availability Calculation
-  const [groupCounts, setGroupCounts] = useState<Map<string, number>>(new Map())
+  // Map slotId -> Array of participant names
+  const [slotToNames, setSlotToNames] = useState<Map<string, string[]>>(new Map())
   const [totalParticipants, setTotalParticipants] = useState(0)
 
   // Re-calculate group heatmap whenever eventData changes
   useEffect(() => {
     if (!eventData?.participants) return
 
-    const counts = new Map<string, number>()
+    const mapping = new Map<string, string[]>()
     let total = 0
 
     eventData.participants.forEach((p: any) => {
         total++
         if (Array.isArray(p.availability)) {
             p.availability.forEach((slot: string) => {
-                counts.set(slot, (counts.get(slot) || 0) + 1)
+                const current = mapping.get(slot) || []
+                current.push(p.name)
+                mapping.set(slot, current)
             })
         }
     })
 
-    setGroupCounts(counts)
+    setSlotToNames(mapping)
     setTotalParticipants(total)
   }, [eventData])
+
+  // Polling for Real-time updates (every 3s)
+  useEffect(() => {
+      if (!id) return
+      const interval = setInterval(() => {
+          fetch(`${API_URL}/events/${id}`)
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                if (data) {
+                    setEventData((prev: any) => ({ ...prev, participants: data.participants }))
+                }
+            })
+            .catch(err => console.error('Poll error:', err))
+      }, 3000)
+      return () => clearInterval(interval)
+  }, [id, API_URL])
 
   // Auto-Save Availability
   useEffect(() => {
@@ -130,7 +153,6 @@ export function EventPage() {
 
     const timer = setTimeout(async () => {
       try {
-        console.log('Saving availability...', Array.from(selectedSlots))
         const res = await fetch(`${API_URL}/events/${id}/participate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -140,7 +162,7 @@ export function EventPage() {
             })
         })
         if (!res.ok) throw new Error('Failed to save')
-        console.log('Saved successfully')
+        // console.log('Saved successfully')
       } catch (err) {
         console.error('Save error:', err)
       }
@@ -148,6 +170,9 @@ export function EventPage() {
 
     return () => clearTimeout(timer)
   }, [selectedSlots, isSignedIn, name, id, API_URL])
+
+  // Derived state for highlighting
+  const highlightedNames = hoveredSlot ? (slotToNames.get(hoveredSlot) || []) : []
 
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>
   if (error) return <div className="flex h-screen items-center justify-center text-destructive">{error}</div>
@@ -207,16 +232,52 @@ export function EventPage() {
              <div className="px-2">
                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Participants ({totalParticipants})</h4>
                  <div className="space-y-2">
-                     {eventData?.participants?.map((p: any) => (
-                         <div key={p.id || p.name} className="flex items-center gap-2 text-sm">
-                             <Avatar className="h-6 w-6">
-                                 <AvatarFallback className="text-[10px]">{p.name?.charAt(0)}</AvatarFallback>
-                             </Avatar>
-                             <span className="truncate">{p.name}</span>
-                         </div>
-                     ))}
+                     {eventData?.participants?.map((p: any) => {
+                         const isHighlighted = highlightedNames.includes(p.name)
+                         return (
+                             <div
+                                key={p.id || p.name}
+                                className={`flex items-center gap-2 text-sm p-1.5 rounded-md transition-colors ${
+                                    isHighlighted ? 'bg-primary/20 font-medium text-primary' : 'text-muted-foreground'
+                                }`}
+                             >
+                                 <Avatar className={`h-6 w-6 ${isHighlighted ? 'ring-2 ring-primary ring-offset-1' : ''}`}>
+                                     <AvatarFallback className="text-[10px]">{p.name?.charAt(0)}</AvatarFallback>
+                                 </Avatar>
+                                 <span className="truncate">{p.name} {p.name === name ? '(You)' : ''}</span>
+                             </div>
+                         )
+                     })}
                  </div>
              </div>
+         </div>
+         {/* Current User Footer */}
+         <div className="border-t border-border pt-4 mt-4">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 overflow-hidden">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span className="text-xs font-medium truncate">{name}</span>
+                </div>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsSignedIn(false)} title="Change Name">
+                    <span className="sr-only">Log out</span>
+                     <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-3 w-3"
+                    >
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" x2="9" y1="12" y2="12" />
+                    </svg>
+                </Button>
+            </div>
          </div>
       </aside>
 
@@ -280,8 +341,9 @@ export function EventPage() {
                     <CardContent className="p-0 overflow-auto max-h-[600px]">
                          <HeatmapGrid
                           columns={columns}
-                          groupCounts={groupCounts}
+                          slotToNames={slotToNames}
                           totalParticipants={totalParticipants}
+                          onHover={(slotId) => setHoveredSlot(slotId)}
                         />
                     </CardContent>
                 </Card>
@@ -294,14 +356,19 @@ export function EventPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-2">
-                        {eventData?.participants?.map((p: any) => (
-                             <div key={p.id || p.name} className="flex items-center gap-3">
+                        {eventData?.participants?.map((p: any) => {
+                             const isHighlighted = highlightedNames.includes(p.name)
+                             return (
+                             <div key={p.id || p.name} className={`flex items-center gap-3 p-2 rounded ${isHighlighted ? 'bg-primary/20' : ''}`}>
                                  <Avatar className="h-8 w-8">
                                      <AvatarFallback>{p.name?.charAt(0)}</AvatarFallback>
                                  </Avatar>
-                                 <span className="text-sm font-medium">{p.name} {p.name === name ? '(You)' : ''}</span>
+                                 <span className={`text-sm font-medium ${isHighlighted ? 'text-primary' : ''}`}>
+                                     {p.name} {p.name === name ? '(You)' : ''}
+                                 </span>
                              </div>
-                         ))}
+                            )
+                         })}
                     </div>
                 </CardContent>
             </Card>
@@ -394,11 +461,21 @@ function InteractiveGrid({ columns, selectedSlots, onSlotToggle }: InteractiveGr
     )
 }
 
-function HeatmapGrid({ columns, groupCounts, totalParticipants }: { columns: { label: string; subLabel?: string }[], groupCounts: Map<string, number>, totalParticipants: number }) {
+function HeatmapGrid({
+    columns,
+    slotToNames,
+    totalParticipants,
+    onHover
+}: {
+    columns: { label: string; subLabel?: string }[],
+    slotToNames: Map<string, string[]>,
+    totalParticipants: number,
+    onHover: (slotId: string | null) => void
+}) {
      const rows = Array.from({ length: 9 })
 
      return (
-        <div className="min-w-[400px] p-4">
+        <div className="min-w-[400px] p-4" onMouseLeave={() => onHover(null)}>
              <div
                 className="grid gap-px bg-border border border-border"
                 style={{ gridTemplateColumns: `60px repeat(${columns.length}, 1fr)` }}
@@ -423,7 +500,8 @@ function HeatmapGrid({ columns, groupCounts, totalParticipants }: { columns: { l
                             </div>
                             {columns.map((_, j) => {
                                 const slotId = `${i}-${j}`
-                                const count = groupCounts.get(slotId) || 0
+                                const names = slotToNames.get(slotId) || []
+                                const count = names.length
                                 // Opacity = count / max(1, total)
                                 const opacity = totalParticipants > 0 ? (count / totalParticipants) : 0
 
@@ -431,6 +509,7 @@ function HeatmapGrid({ columns, groupCounts, totalParticipants }: { columns: { l
                                 <div
                                     key={`${i}-${j}`}
                                     className="bg-background h-10 relative group"
+                                    onMouseEnter={() => onHover(slotId)}
                                 >
                                     {count > 0 && (
                                         <div
@@ -440,8 +519,9 @@ function HeatmapGrid({ columns, groupCounts, totalParticipants }: { columns: { l
                                     )}
                                     {/* Tooltip on hover */}
                                     {count > 0 && (
-                                        <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded mb-1 whitespace-nowrap z-10">
-                                            {count} / {totalParticipants}
+                                        <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded mb-1 whitespace-nowrap z-50 pointer-events-none shadow-lg">
+                                            <div className="font-bold border-b border-gray-700 pb-1 mb-1">{count}/{totalParticipants} Available</div>
+                                            {names.map(n => <div key={n}>{n}</div>)}
                                         </div>
                                     )}
                                 </div>

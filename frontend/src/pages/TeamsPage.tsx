@@ -2,11 +2,44 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Users, Plus, Search, MoreHorizontal, Settings } from 'lucide-react'
+import { Users, Plus, Search, MoreHorizontal, Settings, Loader2 } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useAuth } from '@/components/AuthProvider'
+import { useEffect, useState } from 'react'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
 export function TeamsPage() {
+  const { user } = useAuth()
+  const [teams, setTeams] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user?.id) return
+
+    async function fetchTeams() {
+      try {
+        setLoading(true)
+        const res = await fetch(`${API_URL}/teams?user_id=${user?.id}`)
+        if (res.ok) {
+            const data = await res.json()
+            setTeams(data)
+        }
+      } catch (err) {
+        console.error('Teams fetch error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTeams()
+  }, [user?.id])
+
+  if (loading) {
+      return <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+  }
+
   return (
     <>
       {/* Header */}
@@ -32,68 +65,44 @@ export function TeamsPage() {
 
       {/* Teams Grid */}
       <div className="grid gap-4">
-        <TeamCard
-          name="Engineering Team"
-          description="Weekly standups and sprint planning"
-          members={[
-            { name: "John D", avatar: "" },
-            { name: "Jane S", avatar: "" },
-            { name: "Mike R", avatar: "" },
-            { name: "Sarah K", avatar: "" },
-          ]}
-          moreMembers={2}
-          events={3}
-          role="Leader"
-        />
-        <TeamCard
-          name="Design Team"
-          description="Design reviews and brainstorming sessions"
-          members={[
-            { name: "Alex P", avatar: "" },
-            { name: "Chris M", avatar: "" },
-            { name: "Dana L", avatar: "" },
-          ]}
-          moreMembers={1}
-          events={2}
-          role="Member"
-        />
-        <TeamCard
-          name="Marketing"
-          description="Campaign planning and content reviews"
-          members={[
-            { name: "Sam W", avatar: "" },
-            { name: "Taylor B", avatar: "" },
-          ]}
-          moreMembers={0}
-          events={1}
-          role="Member"
-        />
+        {teams.length === 0 ? (
+            <div className="text-center py-12 border-2 border-dashed rounded-lg bg-muted/20">
+                <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <h3 className="text-lg font-medium mb-1">No teams yet</h3>
+                <p className="text-muted-foreground mb-4">Create a team to start scheduling recurring events.</p>
+                <Link to="/teams/new">
+                    <Button>Create Your First Team</Button>
+                </Link>
+            </div>
+        ) : (
+            teams.map(team => (
+                <TeamCard
+                    key={team.id}
+                    team={team}
+                    role={team.role === 'admin' ? 'Leader' : 'Member'}
+                />
+            ))
+        )}
       </div>
     </>
   )
 }
 
-interface TeamCardProps {
-  name: string
-  description: string
-  members: { name: string; avatar: string }[]
-  moreMembers: number
-  events: number
-  role: 'Leader' | 'Member'
-}
+function TeamCard({ team, role }: { team: any, role: string }) {
+  // We need to fetch team members count if not provided, for now hardcode 1 or fetch
+  // The list endpoint returns minimal data. Let's assume just showing name/role is fine for MVP.
 
-function TeamCard({ name, description, members, moreMembers, events, role }: TeamCardProps) {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
-          <Link to="/teams/engineering" className="flex items-start gap-4 hover:opacity-80 transition-opacity">
+          <Link to={`/teams/${team.id}`} className="flex items-start gap-4 hover:opacity-80 transition-opacity">
             <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
               <Users className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="font-semibold text-lg">{name}</h3>
-              <p className="text-sm text-muted-foreground">{description}</p>
+              <h3 className="font-semibold text-lg">{team.name}</h3>
+              <p className="text-sm text-muted-foreground">Team</p>
             </div>
           </Link>
           <div className="flex items-center gap-2">
@@ -116,7 +125,6 @@ function TeamCard({ name, description, members, moreMembers, events, role }: Tea
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuItem>View members</DropdownMenuItem>
-                <DropdownMenuItem>Copy invite link</DropdownMenuItem>
                 <DropdownMenuItem className="text-destructive">Leave team</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -125,26 +133,10 @@ function TeamCard({ name, description, members, moreMembers, events, role }: Tea
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex -space-x-2">
-              {members.map((member, i) => (
-                <Avatar key={i} className="h-8 w-8 border-2 border-background">
-                  <AvatarImage src={member.avatar} />
-                  <AvatarFallback className="text-xs">{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
-              ))}
-              {moreMembers > 0 && (
-                <div className="h-8 w-8 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs text-muted-foreground">
-                  +{moreMembers}
-                </div>
-              )}
-            </div>
             <span className="text-sm text-muted-foreground">
-              {members.length + moreMembers} members
+               View Details
             </span>
           </div>
-          <span className="text-sm text-muted-foreground">
-            {events} upcoming {events === 1 ? 'event' : 'events'}
-          </span>
         </div>
       </CardContent>
     </Card>

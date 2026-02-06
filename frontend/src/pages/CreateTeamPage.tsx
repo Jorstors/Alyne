@@ -1,11 +1,48 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { useAuth } from '@/components/AuthProvider'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
 export function CreateTeamPage() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const [name, setName] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim()) return
+
+    try {
+        setLoading(true)
+        const res = await fetch(`${API_URL}/teams`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name,
+                user_id: user?.id
+            })
+        })
+
+        if (!res.ok) throw new Error('Failed to create team')
+
+        // Redirect to teams list
+        navigate('/teams')
+
+    } catch (err) {
+        console.error(err)
+        alert('Failed to create team')
+    } finally {
+        setLoading(false)
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto">
       {/* Back Button */}
@@ -22,30 +59,23 @@ export function CreateTeamPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleCreate}>
             <div className="space-y-2">
               <Label htmlFor="name">Team name</Label>
-              <Input id="name" placeholder="e.g., Engineering Team" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (optional)</Label>
-              <Input id="description" placeholder="What is this team for?" />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Invite members</Label>
-              <p className="text-sm text-muted-foreground mb-2">
-                Add team members by email. They'll receive an invitation to join.
-              </p>
-              <div className="flex gap-2">
-                <Input placeholder="email@example.com" className="flex-1" />
-                <Button type="button" variant="outline">Add</Button>
-              </div>
+              <Input
+                id="name"
+                placeholder="e.g., Engineering Team"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
             </div>
 
             <div className="flex gap-3 pt-4">
-              <Button type="submit" className="flex-1">Create Team</Button>
+              <Button type="submit" className="flex-1" disabled={loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create Team
+              </Button>
               <Link to="/teams">
                 <Button type="button" variant="outline">Cancel</Button>
               </Link>

@@ -26,6 +26,7 @@ export const supabaseAdmin = (supabaseUrl && supabaseServiceKey)
 
 // Routes
 import eventsRouter from './routes/events';
+import teamsRouter from './routes/teams';
 
 app.get('/', (req, res) => {
   res.json({ message: 'Alyne API is running!' });
@@ -36,6 +37,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/events', eventsRouter);
+app.use('/api/teams', teamsRouter);
 
 // Example: Admin route that client shouldn't do
 app.post('/api/admin/system-check', async (req, res) => {

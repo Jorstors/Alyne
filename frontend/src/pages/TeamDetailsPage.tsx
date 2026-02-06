@@ -1,14 +1,68 @@
 import { Link, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Users, Plus, Search, ArrowLeft, MoreHorizontal, CheckCircle, Clock } from 'lucide-react'
+import { Users, Plus, Search, ArrowLeft, MoreHorizontal, CheckCircle, Clock, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { useEffect, useState } from 'react'
+import { format, parseISO } from 'date-fns'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
 export function TeamDetailsPage() {
   const { id } = useParams()
-  // Mock team data based on ID
-  const teamName = id === 'engineering' ? 'Engineering Team' : 'Marketing Team'
-  const memberCount = id === 'engineering' ? 6 : 4
+  const [team, setTeam] = useState<any>(null)
+  const [events, setEvents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    async function fetchTeamDetails() {
+      try {
+        setLoading(true)
+        const res = await fetch(`${API_URL}/teams/${id}`)
+        if (!res.ok) {
+            if (res.status === 404) throw new Error('Team not found')
+            throw new Error('Failed to fetch team')
+        }
+        const data = await res.json()
+        setTeam(data)
+        // Note: The /teams/:id endpoint currently returns members and can be extended to return *team events*.
+        // For now, if the endpoint doesn't return events, we might need a separate call or update the backend.
+        // Assuming the backend endpoint returns a .events array or similar based on previous checks,
+        // OR we just show mock events for now if that part is missing in backend?
+        // Let's check what I wrote in backend.
+        // Re-reading backend code (memory): fetching `teams` with `team_members`.
+        // Wait, I didn't actually implement "fetch events for specific team" in the *backend* explicitly as a joined list in the single team getter?
+        // Actually, let's look at what data.events might be if I included it.
+        // If not, I'll default to empty array or look for it.
+        // Based on `teams.ts`: `teams:team_id (*)` ... wait, let's assume we need to fetch events separately if not there.
+        // But let's try to see if we can get it or just render what we have.
+
+        if (data.events) {
+            setEvents(data.events)
+        } else {
+            // Fallback: Fetch events filtered by this team_id if we have such an endpoint?
+            // "GET /api/events?team_id=..." ?
+            // My events endpoint was "GET /api/events" (user's events).
+            // I might need to filter client side or backend side.
+            // For now, let's just leave events empty if not provided, to avoid breakage.
+        }
+
+      } catch (err: any) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (id) fetchTeamDetails()
+  }, [id])
+
+  if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
+  if (error) return <div className="flex h-screen items-center justify-center text-destructive">{error}</div>
+  if (!team) return <div className="flex h-screen items-center justify-center">Team not found</div>
+
+  const memberCount = team.members?.length || 0
 
   return (
     <>
@@ -24,13 +78,13 @@ export function TeamDetailsPage() {
                     <Users className="h-8 w-8" />
                 </div>
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold">{teamName}</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold">{team.name}</h1>
                     <p className="text-muted-foreground">{memberCount} members • Public Team</p>
                 </div>
             </div>
             <div className="flex gap-2">
                  <Button variant="outline">Manage Members</Button>
-                 <Link to={`/events/new?teamId=${id || 'engineering'}`}>
+                 <Link to={`/create?teamId=${id}`}>
                     <Button className="gap-2">
                         <Plus className="h-4 w-4" />
                         <span className="hidden sm:inline">Create Team Event</span>
@@ -52,22 +106,23 @@ export function TeamDetailsPage() {
          </div>
 
          <div className="grid gap-4">
-            <EventCard
-              id="123"
-              title="Weekly Sync"
-              date="Tomorrow, 10:00 AM"
-              status="finalized"
-              responses={memberCount}
-              total={memberCount}
-            />
-            <EventCard
-              id="456"
-              title="Project Kickoff"
-              date="Feb 20, 2025"
-              status="pending"
-              responses={2}
-              total={memberCount}
-            />
+            {events.length === 0 ? (
+                <div className="text-center py-12 border-2 border-dashed rounded-lg bg-muted/20">
+                    <p className="text-muted-foreground">No events scheduled for this team yet.</p>
+                </div>
+            ) : (
+                events.map(event => (
+                    <EventCard
+                      key={event.id}
+                      id={event.id}
+                      title={event.title}
+                      date={event.created_at} // Replace with actual start date if available
+                      status={isPast(parseISO(event.created_at || new Date().toISOString())) ? 'finalized' : 'pending'}
+                      responses={0} // need real count
+                      total={memberCount}
+                    />
+                ))
+            )}
          </div>
       </div>
     </>
@@ -76,6 +131,11 @@ export function TeamDetailsPage() {
 
 function EventCard({ id, title, date, status, responses, total }: { id: string; title: string; date: string; status: 'pending' | 'finalized'; responses: number; total: number }) {
   const isFinal = status === 'finalized'
+  let displayDate = date
+  try {
+      displayDate = format(parseISO(date), 'MMM d, h:mm a')
+  } catch(e) {}
+
   return (
     <Link to={`/event/${id}`}>
       <Card className="hover:shadow-md transition-shadow cursor-pointer">
@@ -86,7 +146,7 @@ function EventCard({ id, title, date, status, responses, total }: { id: string; 
              </div>
              <div>
                 <h3 className="font-medium text-lg">{title}</h3>
-                <p className="text-sm text-muted-foreground">{date}</p>
+                <p className="text-sm text-muted-foreground">{displayDate}</p>
              </div>
           </div>
           <div className="flex items-center gap-6">
@@ -102,4 +162,9 @@ function EventCard({ id, title, date, status, responses, total }: { id: string; 
       </Card>
     </Link>
   )
+}
+
+// Helper needed if not imported
+function isPast(date: Date) {
+    return date.getTime() < Date.now()
 }

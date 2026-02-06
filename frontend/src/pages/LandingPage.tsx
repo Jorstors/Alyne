@@ -2,9 +2,11 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Users, Clock, ArrowRight, Menu, X, Calendar } from 'lucide-react'
 import { useState } from 'react'
+import { useAuth } from '@/components/AuthProvider'
 
 export function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { user } = useAuth()
 
   return (
     <div className="min-h-screen bg-background">
@@ -20,12 +22,20 @@ export function LandingPage() {
             <Link to="/create">
               <Button variant="ghost" size="sm">Quick Event</Button>
             </Link>
-            <Link to="/login">
-              <Button variant="ghost" size="sm">Log in</Button>
-            </Link>
-            <Link to="/login">
-              <Button size="sm">Get Started</Button>
-            </Link>
+            {user ? (
+                <Link to="/dashboard">
+                  <Button size="sm">Go to Dashboard</Button>
+                </Link>
+            ) : (
+                <>
+                    <Link to="/login">
+                    <Button variant="ghost" size="sm">Log in</Button>
+                    </Link>
+                    <Link to="/login">
+                    <Button size="sm">Get Started</Button>
+                    </Link>
+                </>
+            )}
           </div>
 
           {/* Mobile menu button */}

@@ -1,11 +1,12 @@
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { useAuth } from '@/components/AuthProvider'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 
 import { Label } from '@/components/ui/label'
 import { ArrowLeft, Calendar as CalendarIcon, Users, ChevronLeft, ChevronRight } from 'lucide-react'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Calendar } from '@/components/ui/calendar'
 import { useState } from 'react'
 import type { DateRange } from 'react-day-picker'
@@ -53,6 +54,9 @@ export function CreateEventPage() {
   // Determine API URL based on environment
   const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api')
 
+  const { user } = useAuth()
+  const isAuthenticated = !!user
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -69,7 +73,9 @@ export function CreateEventPage() {
       event_type: mode === 'date' ? 'specific_dates' : 'days_of_week',
       configuration: mode === 'date'
         ? { dates: [] } // For now sending empty, will fix to send actual dates
-        : { days: Array.from(selectedDays) }
+        : { days: Array.from(selectedDays) },
+      user_id: user?.id, // Link to authenticated user
+      team_id: searchParams.get('teamId') // Link to team if applicable
     }
 
     // Fix dates payload
@@ -179,7 +185,7 @@ export function CreateEventPage() {
     })
   }
 
-  const [isAuthenticated] = useState(false) // Default to anonymous for "Quick Event"
+
 
 
 
@@ -201,11 +207,12 @@ export function CreateEventPage() {
         <div className="pt-4 border-t border-border">
           <div className="flex items-center gap-3">
              <Avatar className="h-8 w-8">
-               <AvatarFallback>JD</AvatarFallback>
+               <AvatarImage src={user?.user_metadata?.avatar_url} />
+               <AvatarFallback>{user?.user_metadata?.name?.charAt(0) || 'U'}</AvatarFallback>
              </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">Justus</p>
-              <p className="text-xs text-muted-foreground truncate">justus@example.com</p>
+              <p className="text-sm font-medium truncate">{user?.user_metadata?.name || 'User'}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
           </div>
         </div>

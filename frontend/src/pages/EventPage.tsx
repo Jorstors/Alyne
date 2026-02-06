@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Calendar as CalendarIcon, Copy, Check } from 'lucide-react'
+import { Calendar as CalendarIcon, Copy, Check, Loader2, ArrowLeft } from 'lucide-react'
+import { useAuth } from '@/components/AuthProvider'
 import { useState, useEffect } from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { addDays, differenceInDays, format, parseISO } from 'date-fns'
@@ -174,43 +175,81 @@ export function EventPage() {
   // Derived state for highlighting
   const highlightedNames = hoveredSlot ? (slotToNames.get(hoveredSlot) || []) : []
 
-  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>
+  const { user } = useAuth()
+
+  // Auto-fill name if logged in
+  useEffect(() => {
+    if (user?.user_metadata?.name && !name) {
+        setName(user.user_metadata.name)
+        setIsSignedIn(true)
+    }
+  }, [user])
+
+  if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
   if (error) return <div className="flex h-screen items-center justify-center text-destructive">{error}</div>
 
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-6">
-        <Card className="w-full max-w-md shadow-xl">
-          <CardHeader className="text-center space-y-2">
-             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-                <CalendarIcon className="h-6 w-6 text-primary" />
+      <div className="min-h-screen bg-muted/30 flex flex-col">
+          {/* Top Nav for Login/Back */}
+          <header className="px-6 py-4 flex justify-between items-center">
+             <div className="flex items-center gap-2">
+                <Link to="/" className="flex items-center gap-2 font-bold text-xl">
+                    <img src="/alyne-logo.svg" alt="Alyne" className="h-8" />
+                    <span>Alyne</span>
+                </Link>
              </div>
-            <CardTitle className="text-2xl">Sign in to Event</CardTitle>
-            <CardDescription>
-              Enter your name to show your availability.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Your Name</Label>
-                <Input
-                  id="name"
-                  placeholder="e.g. John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  autoFocus
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={!name.trim()}>
-                Continue
-              </Button>
-               <p className="text-xs text-center text-muted-foreground mt-4">
-                Event ID: <span className="font-mono">{id}</span>
-              </p>
-            </form>
-          </CardContent>
-        </Card>
+             <div>
+                {user ? (
+                    <Link to="/dashboard">
+                        <Button variant="ghost">Go to Dashboard</Button>
+                    </Link>
+                ) : (
+                    <div className="flex gap-4">
+                         <Link to="/login">
+                            <Button variant="ghost">Log in</Button>
+                         </Link>
+                         <Link to="/#signup">
+                            <Button>Sign up free</Button>
+                         </Link>
+                    </div>
+                )}
+             </div>
+          </header>
+
+          <div className="flex-1 flex items-center justify-center p-6 -mt-16">
+            <Card className="w-full max-w-md shadow-xl">
+            <CardHeader className="text-center space-y-2">
+                <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+                    <CalendarIcon className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle className="text-2xl">Sign in to Event</CardTitle>
+                <CardDescription>
+                Enter your name to show your availability.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="name">Your Name</Label>
+                    <Input
+                    id="name"
+                    placeholder="e.g. John Doe"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    autoFocus
+                    />
+                </div>
+                <Button type="submit" className="w-full" disabled={!name.trim()}>
+                    Continue
+                </Button>
+                <p className="text-xs text-center text-muted-foreground mt-4">
+                    Event ID: <span className="font-mono">{id}</span>
+                </p>
+                </form>
+            </CardContent>
+            </Card>
+          </div>
       </div>
     )
   }
@@ -221,6 +260,12 @@ export function EventPage() {
         <Link to="/" className="flex items-center mb-8">
           <img src="/alyne-logo.svg" alt="Alyne" className="h-6" />
         </Link>
+        {user && (
+            <Link to="/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6 px-2 transition-colors">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+            </Link>
+        )}
          <div className="flex-1">
             <div className="bg-primary/5 rounded-lg p-4 mb-4">
                 <h3 className="font-semibold text-primary mb-1">Event Details</h3>

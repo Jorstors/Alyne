@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Users, Clock, ArrowRight, Menu, X, Calendar } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/components/AuthProvider'
+import { GridPreview } from '@/components/GridPreview'
 
 export function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -112,6 +113,14 @@ export function LandingPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Product Preview */}
+        <div className="mt-20 md:mt-32 relative mx-auto max-w-7xl px-6">
+            <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent pointer-events-none z-10 h-20 bottom-0" />
+            <div className="relative">
+                <GridPreview />
+            </div>
         </div>
       </section>
 

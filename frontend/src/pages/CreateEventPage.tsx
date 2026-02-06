@@ -329,9 +329,10 @@ export function CreateEventPage() {
                              classNames={{
                                  caption: 'hidden',
                                  nav: 'hidden',
-                                 day_button: cn(buttonVariants({ variant: "ghost" }), "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-md"),
-                                 selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-md",
-                                 today: "bg-accent/50 text-accent-foreground font-bold rounded-md",
+                                 day: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-none [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-none last:[&:has([aria-selected])]:rounded-none focus-within:relative focus-within:z-20",
+                                 day_button: cn(buttonVariants({ variant: "ghost" }), "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-none"),
+                                 selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-none",
+                                 today: "bg-accent/50 text-accent-foreground font-bold rounded-none",
                              }}
                            />
                            {dateRange?.from && (

@@ -1,17 +1,33 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Calendar, Users, Menu, X, LogOut } from 'lucide-react'
+import { Calendar, Users, Menu, X, LogOut, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/components/AuthProvider'
 import { supabase } from '@/lib/supabase'
 
 export function AuthenticatedLayout() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { user, loading } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login', { state: { from: location.pathname } })
+    }
+  }, [user, loading, navigate, location])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!user) return null
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()

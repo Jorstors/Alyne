@@ -74,6 +74,24 @@ export function EventPage() {
     setTimeout(() => setIsCopied(false), 2000)
   }
 
+  // Availability State
+  const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set())
+
+  const handleSlotToggle = (slotId: string, forceState?: 'add' | 'remove') => {
+    setSelectedSlots(prev => {
+      const next = new Set(prev)
+      const exists = next.has(slotId)
+      const action = forceState || (exists ? 'remove' : 'add')
+
+      if (action === 'add') {
+        next.add(slotId)
+      } else {
+        next.delete(slotId)
+      }
+      return next
+    })
+  }
+
   if (!isSignedIn) {
     return (
       <div className="min-h-screen bg-muted/30 flex items-center justify-center p-6">
@@ -167,7 +185,11 @@ export function EventPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 overflow-auto max-h-[600px]">
-                        <InteractiveGrid columns={columns} />
+                        <InteractiveGrid
+                          columns={columns}
+                          selectedSlots={selectedSlots}
+                          onSlotToggle={handleSlotToggle}
+                        />
                     </CardContent>
                 </Card>
 
@@ -183,7 +205,10 @@ export function EventPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 overflow-auto max-h-[600px]">
-                         <HeatmapGrid columns={columns} />
+                         <HeatmapGrid
+                          columns={columns}
+                          groupAvailability={selectedSlots}
+                        />
                     </CardContent>
                 </Card>
             </div>
@@ -209,41 +234,29 @@ export function EventPage() {
   )
 }
 
-function InteractiveGrid({ columns }: { columns: { label: string; subLabel?: string }[] }) {
+interface InteractiveGridProps {
+  columns: { label: string; subLabel?: string }[]
+  selectedSlots: Set<string>
+  onSlotToggle: (slotId: string, forceState?: 'add' | 'remove') => void
+}
+
+function InteractiveGrid({ columns, selectedSlots, onSlotToggle }: InteractiveGridProps) {
     const [isDragging, setIsDragging] = useState(false)
-    const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set())
     const [dragMode, setDragMode] = useState<'add' | 'remove'>('add')
 
     // Rows (9 AM to 5 PM = 9 hours)
-    // Actually typically 8 hours (9-17) but logic was 9 rows. Keeping 9 rows (9am to 6pm end?)
-    // Logic: 9 rows. 9 + i.
     const rows = Array.from({ length: 9 })
-
-    const toggleSlot = (slotId: string, forceState?: 'add' | 'remove') => {
-        setSelectedSlots(prev => {
-            const next = new Set(prev)
-            const exists = next.has(slotId)
-            const action = forceState || (exists ? 'remove' : 'add')
-
-            if (action === 'add') {
-                next.add(slotId)
-            } else {
-                next.delete(slotId)
-            }
-            return next
-        })
-    }
 
     const handleMouseDown = (slotId: string) => {
         setIsDragging(true)
         const exists = selectedSlots.has(slotId)
         setDragMode(exists ? 'remove' : 'add')
-        toggleSlot(slotId, exists ? 'remove' : 'add')
+        onSlotToggle(slotId, exists ? 'remove' : 'add')
     }
 
     const handleMouseEnter = (slotId: string) => {
         if (isDragging) {
-            toggleSlot(slotId, dragMode)
+            onSlotToggle(slotId, dragMode)
         }
     }
 
@@ -303,7 +316,7 @@ function InteractiveGrid({ columns }: { columns: { label: string; subLabel?: str
     )
 }
 
-function HeatmapGrid({ columns }: { columns: { label: string; subLabel?: string }[] }) {
+function HeatmapGrid({ columns, groupAvailability }: { columns: { label: string; subLabel?: string }[], groupAvailability: Set<string> }) {
      const rows = Array.from({ length: 9 })
 
      return (
@@ -331,8 +344,9 @@ function HeatmapGrid({ columns }: { columns: { label: string; subLabel?: string 
                                 {time}
                             </div>
                             {columns.map((_, j) => {
-                                // Mock random opacity for heatmap
-                                const opacity = Math.random() > 0.5 ? Math.random() : 0
+                                const slotId = `${i}-${j}`
+                                // For now, simple 1.0 opacity if user selected it
+                                const opacity = groupAvailability.has(slotId) ? 1.0 : 0
                                 return (
                                 <div
                                     key={`${i}-${j}`}

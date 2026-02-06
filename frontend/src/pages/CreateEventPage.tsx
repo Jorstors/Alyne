@@ -1,4 +1,4 @@
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -23,8 +23,17 @@ import { cn } from "@/lib/utils"
 export function CreateEventPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const location = useLocation()
   const [eventName, setEventName] = useState('')
   const [mode, setMode] = useState<'date' | 'days'>('date')
+
+  // Determine Back Link
+  // 1. If explicit 'from' state exists, use it
+  // 2. If path is '/events/new', go to Dashboard (or specific team if known, but Dashboard is safer)
+  // 3. Default to Home
+  const isInternal = location.pathname.startsWith('/events')
+  const backLink = location.state?.from || (isInternal ? '/dashboard' : '/')
+  const backLabel = location.state?.label || (isInternal ? 'Back to Dashboard' : 'Back to Home')
 
   // Date Mode State
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -171,9 +180,9 @@ export function CreateEventPage() {
          <div className="max-w-5xl mx-auto relative">
           {/* Header Actions */}
            <div className="flex justify-between items-center mb-8">
-              <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+              <Link to={backLink} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="h-4 w-4" />
-                Back to Home
+                {backLabel}
               </Link>
 
 

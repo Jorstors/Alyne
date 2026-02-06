@@ -32,7 +32,7 @@ export function TeamDetailsPage() {
             </div>
             <div className="flex gap-2">
                  <Button variant="outline">Manage Members</Button>
-                 <Link to={`/create?teamId=${id || 'engineering'}`}>
+                 <Link to={`/events/new?teamId=${id || 'engineering'}`}>
                     <Button className="gap-2">
                         <Plus className="h-4 w-4" />
                         <span className="hidden sm:inline">Create Team Event</span>

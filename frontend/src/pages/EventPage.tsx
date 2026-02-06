@@ -1,17 +1,17 @@
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Calendar as CalendarIcon, Copy, Check, Loader2, ArrowLeft } from 'lucide-react'
+import { Copy, Check, Loader2, ArrowLeft, Users } from 'lucide-react'
 import { useAuth } from '@/components/AuthProvider'
 import { useState, useEffect } from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { addDays, differenceInDays, format, parseISO } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 
 export function EventPage() {
   const { id } = useParams()
-  const [searchParams] = useSearchParams()
+
   const [name, setName] = useState('')
   const [isSignedIn, setIsSignedIn] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
@@ -207,180 +207,201 @@ export function EventPage() {
 
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-muted/30 flex flex-col">
-          {/* Top Nav for Login/Back */}
-          <header className="px-6 py-4 flex justify-between items-center">
-             <div className="flex items-center gap-2">
-                <Link to="/" className="flex items-center gap-2 font-bold text-xl">
-                    <img src="/alyne-logo.svg" alt="Alyne" className="h-8" />
-                    <span>Alyne</span>
-                </Link>
-             </div>
-             <div>
-                {user ? (
-                    <Link to="/dashboard">
-                        <Button variant="ghost">Go to Dashboard</Button>
-                    </Link>
-                ) : (
-                    <div className="flex gap-4">
-                         <Link to="/login">
-                            <Button variant="ghost">Log in</Button>
-                         </Link>
-                         <Link to="/#signup">
-                            <Button>Sign up free</Button>
-                         </Link>
-                    </div>
-                )}
-             </div>
-          </header>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
+          {/* Background Decorative */}
+          <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="flex-1 flex items-center justify-center p-6 -mt-16">
-            <Card className="w-full max-w-md shadow-xl">
-            <CardHeader className="text-center space-y-2">
-                <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-                    <CalendarIcon className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle className="text-2xl">Sign in to Event</CardTitle>
+          <div className="relative w-full max-w-md animate-in fade-in zoom-in duration-500">
+              <div className="text-center mb-8">
+                  <div className="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-sm mb-4 ring-1 ring-black/5">
+                      <img src="/alyne-logo.svg" alt="Alyne" className="h-8" />
+                  </div>
+                  <h1 className="text-3xl font-bold tracking-tight mb-2">{eventData?.title || 'Event Sign In'}</h1>
+                  <p className="text-muted-foreground">Join the event to share your availability.</p>
+              </div>
+
+            <Card className="shadow-xl bg-card/80 backdrop-blur-xl border-white/20 ring-1 ring-black/5">
+            <CardHeader className="space-y-1 pb-2">
+                <CardTitle className="text-xl">Authentication</CardTitle>
                 <CardDescription>
-                Enter your name to show your availability.
+                  Enter your name to continue as a guest or login.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="name">Your Name</Label>
-                    <Input
-                    id="name"
-                    placeholder="e.g. John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    autoFocus
-                    />
+            <CardContent className="pt-4">
+                <div className="grid gap-6">
+                    {!user && (
+                         <div className="grid grid-cols-2 gap-3">
+                            <Link to="/login">
+                                <Button variant="outline" className="w-full">Log In</Button>
+                            </Link>
+                            <Link to="/#signup">
+                                <Button variant="secondary" className="w-full">Sign Up</Button>
+                            </Link>
+                         </div>
+                    )}
+
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">Or continue as guest</span>
+                        </div>
+                    </div>
+
+                    <form onSubmit={handleSignIn} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Display Name</Label>
+                            <Input
+                            id="name"
+                            placeholder="How should we call you?"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            autoFocus
+                            className="h-11"
+                            />
+                        </div>
+                        <Button type="submit" size="lg" className="w-full font-semibold shadow-lg shadow-primary/20" disabled={!name.trim()}>
+                            Enter Event
+                        </Button>
+                    </form>
                 </div>
-                <Button type="submit" className="w-full" disabled={!name.trim()}>
-                    Continue
-                </Button>
-                <p className="text-xs text-center text-muted-foreground mt-4">
-                    Event ID: <span className="font-mono">{id}</span>
-                </p>
-                </form>
             </CardContent>
             </Card>
+            <div className="mt-8 text-center">
+                <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    &larr; Back to Home
+                </Link>
+            </div>
           </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border bg-card p-4 flex flex-col hidden md:flex">
-        <Link to="/" className="flex items-center mb-8">
-          <img src="/alyne-logo.svg" alt="Alyne" className="h-6" />
+    <div className="min-h-screen bg-muted/10 font-sans">
+      <aside className="fixed left-0 top-0 bottom-0 w-72 border-r border-border/40 bg-card p-6 flex flex-col hidden md:flex z-50">
+        <Link to="/" className="flex items-center mb-10 px-2">
+          <img src="/alyne-logo.svg" alt="Alyne" className="h-7" />
         </Link>
-        {user && (
-            <Link to="/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6 px-2 transition-colors">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
-            </Link>
-        )}
-         <div className="flex-1">
-            <div className="bg-primary/5 rounded-lg p-4 mb-4">
-                <h3 className="font-semibold text-primary mb-1">Event Details</h3>
-                <p className="text-sm font-medium">{eventData?.title || 'Loading...'}</p>
-                 <p className="text-xs text-muted-foreground mt-1">
-                    {eventData?.event_type === 'days_of_week' ? 'Weekly Recurring' : 'Specific Dates'}
-                </p>
+        <div className="flex-1 overflow-y-auto pr-2">
+            <div className="mb-8">
+                <div className="flex items-center gap-2 text-sm font-medium text-primary mb-2 bg-primary/10 px-3 py-1 rounded-full w-fit">
+                    {eventData?.event_type === 'days_of_week' ? 'Weekly' : 'Specific Dates'}
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight leading-tight mb-2">{eventData?.title || 'Loading...'}</h1>
+                <p className="text-sm text-muted-foreground">{eventData?.description || 'No description provided.'}</p>
             </div>
-             <div className="px-2">
-                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Participants ({totalParticipants})</h4>
-                 <div className="space-y-2">
+
+             <div className="space-y-3">
+                 <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Participants</h4>
+                    <span className="text-xs bg-muted px-2 py-0.5 rounded-full font-medium">{totalParticipants}</span>
+                 </div>
+                 <div className="space-y-1">
                      {eventData?.participants?.map((p: any) => {
                          const isHighlighted = highlightedNames.includes(p.name)
                          return (
                              <div
                                 key={p.id || p.name}
-                                className={`flex items-center gap-2 text-sm p-1.5 rounded-md transition-colors ${
-                                    isHighlighted ? 'bg-primary/20 font-medium text-primary' : 'text-muted-foreground'
+                                className={`flex items-center gap-3 text-sm p-2 rounded-lg transition-all ${
+                                    isHighlighted ? 'bg-primary/10 text-primary font-medium translate-x-1' : 'text-muted-foreground hover:bg-muted/50'
                                 }`}
                              >
-                                 <Avatar className={`h-6 w-6 ${isHighlighted ? 'ring-2 ring-primary ring-offset-1' : ''}`}>
-                                     <AvatarFallback className="text-[10px]">{p.name?.charAt(0)}</AvatarFallback>
+                                 <Avatar className={`h-8 w-8 border-2 ${isHighlighted ? 'border-primary' : 'border-background'}`}>
+                                     <AvatarFallback className="text-xs font-bold">{p.name?.charAt(0)}</AvatarFallback>
                                  </Avatar>
-                                 <span className="truncate">{p.name} {p.name === name ? '(You)' : ''}</span>
+                                 <div className="flex flex-col leading-none">
+                                     <span className="truncate">{p.name} {p.name === name ? '(You)' : ''}</span>
+                                    {p.name === name && <span className="text-[10px] opacity-70 font-normal">Online</span>}
+                                 </div>
                              </div>
                          )
                      })}
                  </div>
              </div>
          </div>
+
          {/* Current User Footer */}
-         <div className="border-t border-border pt-4 mt-4">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 overflow-hidden">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                    <span className="text-xs font-medium truncate">{name}</span>
+         <div className="border-t border-border pt-6 mt-2">
+             {user && (
+            <Link to="/dashboard" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground mb-4 transition-colors">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+            </Link>
+             )}
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-border/50">
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="relative">
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-background absolute right-0 bottom-0"></div>
+                        <Avatar className="h-9 w-9">
+                            <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                    </div>
+                    <div className="flex flex-col">
+                         <span className="text-sm font-semibold truncate">{name}</span>
+                         <span className="text-[10px] text-muted-foreground">Active now</span>
+                    </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsSignedIn(false)} title="Change Name">
-                    <span className="sr-only">Log out</span>
-                     <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-3 w-3"
-                    >
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                      <polyline points="16 17 21 12 16 7" />
-                      <line x1="21" x2="9" y1="12" y2="12" />
-                    </svg>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => setIsSignedIn(false)} title="Log out">
+                     <span className="sr-only">Log out</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
                 </Button>
             </div>
          </div>
       </aside>
 
       {/* Mobile Header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur px-4 h-14 flex items-center justify-between">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur-md px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center">
-             <img src="/alyne-logo.svg" alt="Alyne" className="h-6" />
+             <img src="/alyne-logo.svg" alt="Alyne" className="h-7" />
           </Link>
           <div className="flex items-center gap-2">
-             <span className="text-sm font-medium truncate max-w-[150px]">{searchParams.get('name') || 'Event'}</span>
+             <span className="text-sm font-bold bg-muted/50 px-3 py-1 rounded-full">{eventData?.title}</span>
           </div>
       </header>
 
-      <main className="md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
-        <div className="max-w-6xl mx-auto space-y-8">
+      <main className="md:ml-72 p-4 md:p-10 pt-20 md:pt-10 max-w-[1600px] mx-auto">
+        <div className="space-y-8 animate-in fade-in duration-500 delay-150">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-1">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">{eventData?.title}</h1>
-                    <p className="text-muted-foreground">Please paint your availability below. Changes save automatically.</p>
+                     <div className="flex items-center gap-2 text-primary font-medium mb-1">
+                        <Check className="h-4 w-4" />
+                        <span>Ready to vote</span>
+                     </div>
+                    <h2 className="text-3xl font-bold tracking-tight">Cast your vote</h2>
+                    <p className="text-muted-foreground mt-1">Paint over the times you are available. Changes are saved automatically.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={copyLink} className="gap-2">
-                    {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    {isCopied ? 'Copied Link' : 'Copy Link'}
+                <Button variant="outline" size="lg" onClick={copyLink} className="gap-2 rounded-full hover:bg-muted shadow-sm">
+                    {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    {isCopied ? 'Link Copied!' : 'Share Event Link'}
                 </Button>
             </div>
 
             {/* Split View */}
-            <div className="grid lg:grid-cols-2 gap-8">
+            <div className="grid xl:grid-cols-2 gap-8">
                 {/* My Availability */}
-                <Card className="shadow-md border-primary/20">
-                    <CardHeader className="pb-3 border-b bg-muted/20">
+                <Card className="shadow-sm border bg-card/50 flex flex-col h-[700px]">
+                    <CardHeader className="pb-4 border-b">
                         <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg">My Availability</CardTitle>
-                            <div className="flex items-center gap-2 text-sm">
-                                <span className="w-3 h-3 bg-green-500 rounded-sm"></span>
-                                <span className="text-muted-foreground">Available</span>
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center text-green-600">
+                                    <Check className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-base">My Availability</CardTitle>
+                                    <CardDescription className="text-xs">Click and drag to paint</CardDescription>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs font-medium bg-green-500/10 text-green-700 px-2.5 py-1 rounded-md">
+                                Available
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 overflow-auto max-h-[600px]">
+                    <CardContent className="p-0 overflow-auto flex-1 relative bg-card">
                         <InteractiveGrid
                           columns={columns}
                           selectedSlots={selectedSlots}
@@ -390,17 +411,24 @@ export function EventPage() {
                 </Card>
 
                 {/* Group Availability */}
-                <Card className="shadow-md">
-                     <CardHeader className="pb-3 border-b bg-muted/20">
+                <Card className="shadow-sm border bg-card/50 flex flex-col h-[700px]">
+                     <CardHeader className="pb-4 border-b">
                         <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg">Group's Availability</CardTitle>
-                             <div className="flex items-center gap-2 text-sm">
-                                <span className="w-3 h-3 bg-green-500/80 rounded-sm"></span>
-                                <span className="text-muted-foreground">{totalParticipants > 0 ? `${totalParticipants} Participants` : 'No data yet'}</span>
+                             <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600">
+                                    <Users className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-base">Group Heatmap</CardTitle>
+                                    <CardDescription className="text-xs">Hover to see who is available</CardDescription>
+                                </div>
+                            </div>
+                             <div className="flex items-center gap-2 text-xs font-medium bg-muted px-2.5 py-1 rounded-md">
+                                {totalParticipants} Participants
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 overflow-auto max-h-[600px]">
+                    <CardContent className="p-0 overflow-auto flex-1 relative bg-card">
                          <HeatmapGrid
                           columns={columns}
                           slotToNames={slotToNames}
@@ -412,7 +440,7 @@ export function EventPage() {
             </div>
 
             {/* Attendees List (Mobile / Bottom) */}
-            <Card className="md:hidden">
+            <Card className="md:hidden border-none shadow-lg">
                 <CardHeader>
                     <CardTitle className="text-lg">Attendees ({totalParticipants})</CardTitle>
                 </CardHeader>
@@ -421,7 +449,7 @@ export function EventPage() {
                         {eventData?.participants?.map((p: any) => {
                              const isHighlighted = highlightedNames.includes(p.name)
                              return (
-                             <div key={p.id || p.name} className={`flex items-center gap-3 p-2 rounded ${isHighlighted ? 'bg-primary/20' : ''}`}>
+                             <div key={p.id || p.name} className={`flex items-center gap-3 p-3 rounded-lg border ${isHighlighted ? 'bg-primary/5 border-primary/20' : 'border-transparent bg-muted/30'}`}>
                                  <Avatar className="h-8 w-8">
                                      <AvatarFallback>{p.name?.charAt(0)}</AvatarFallback>
                                  </Avatar>

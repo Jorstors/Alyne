@@ -1,6 +1,6 @@
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '@/components/AuthProvider'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 
@@ -32,9 +32,14 @@ export function CreateEventPage() {
   // 1. If explicit 'from' state exists, use it
   // 2. If path is '/events/new', go to Dashboard (or specific team if known, but Dashboard is safer)
   // 3. Default to Home
-  const isInternal = location.pathname.startsWith('/events')
-  const backLink = location.state?.from || (isInternal ? '/dashboard' : '/')
-  const backLabel = location.state?.label || (isInternal ? 'Back to Dashboard' : 'Back to Home')
+  const { user } = useAuth()
+
+  // Determine Back Link
+  // 1. If explicit 'from' state exists, use it
+  // 2. If user is logged in, go to Dashboard
+  // 3. Default to Home
+  const backLink = location.state?.from || (user ? '/dashboard' : '/')
+  const backLabel = location.state?.label || (user ? 'Back to Dashboard' : 'Back to Home')
 
   // Date Mode State
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -54,7 +59,7 @@ export function CreateEventPage() {
   // Determine API URL based on environment
   const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api')
 
-  const { user } = useAuth()
+
   const isAuthenticated = !!user
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -72,7 +77,7 @@ export function CreateEventPage() {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       event_type: mode === 'date' ? 'specific_dates' : 'days_of_week',
       configuration: mode === 'date'
-        ? { dates: [] } // For now sending empty, will fix to send actual dates
+        ? { dates: [] as string[] } // For now sending empty, will fix to send actual dates
         : { days: Array.from(selectedDays) },
       user_id: user?.id, // Link to authenticated user
       team_id: searchParams.get('teamId') // Link to team if applicable
@@ -192,11 +197,11 @@ export function CreateEventPage() {
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background font-sans">
       {/* Sidebar - Only show if authenticated */}
       {isAuthenticated && (
-      <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border bg-card p-4 flex flex-col hidden md:flex">
-        <Link to="/" className="flex items-center mb-8">
+      <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border bg-card p-4 flex flex-col hidden md:flex z-50">
+        <Link to="/" className="flex items-center mb-8 px-2">
           <img src="/alyne-logo.svg" alt="Alyne" className="h-6" />
         </Link>
         <nav className="space-y-1 flex-1">
@@ -205,8 +210,8 @@ export function CreateEventPage() {
           <NavItem href="/events" icon={<CalendarIcon className="h-4 w-4" />} label="Events" active />
         </nav>
         <div className="pt-4 border-t border-border">
-          <div className="flex items-center gap-3">
-             <Avatar className="h-8 w-8">
+          <div className="flex items-center gap-3 px-2">
+             <Avatar className="h-8 w-8 ring-2 ring-border">
                <AvatarImage src={user?.user_metadata?.avatar_url} />
                <AvatarFallback>{user?.user_metadata?.name?.charAt(0) || 'U'}</AvatarFallback>
              </Avatar>
@@ -220,220 +225,250 @@ export function CreateEventPage() {
       )}
 
       {/* Main Content */}
-      <main className={cn("p-4 md:p-8 transition-all duration-300", isAuthenticated ? "md:ml-64" : "mx-auto")}>
-         <div className="max-w-5xl mx-auto relative">
-          {/* Header Actions */}
-           <div className="flex justify-between items-center mb-8">
-              <Link to={backLink} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="h-4 w-4" />
-                {backLabel}
-              </Link>
+      <main className={cn("min-h-screen transition-all duration-300", isAuthenticated ? "md:ml-64" : "")}>
+         {/* Top Navigation Bar */}
+         <div className="p-6 md:p-8 flex justify-between items-center max-w-6xl mx-auto w-full">
+               <Link to={backLink} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2 pr-4 rounded-full hover:bg-muted/50">
+                 <ArrowLeft className="h-4 w-4" />
+                 {backLabel}
+               </Link>
+               {searchParams.get('teamId') && (
+                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold shadow-sm border border-primary/20">
+                    <Users className="h-4 w-4" />
+                    Creating for Engineering Team
+                 </div>
+               )}
+         </div>
 
-
-           </div>
-
-          <form onSubmit={handleCreate} className="space-y-8">
+         <div className="max-w-5xl mx-auto px-4 pb-24">
+           <form onSubmit={handleCreate} className="space-y-12">
             {/* Header / Event Name */}
-            <div className="flex flex-col gap-4 items-center justify-center text-center">
-              <Input
-                value={eventName}
-                onChange={(e) => setEventName(e.target.value)}
-                placeholder="New Event Name"
-                className="text-3xl md:text-4xl font-bold text-center border-none shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/30 h-auto py-2 px-4 max-w-full bg-transparent break-words whitespace-normal"
-                required
-              />
-
-              {/* Team Context Message */}
-              {searchParams.get('teamId') && (
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                   <Users className="h-4 w-4" />
-                   Creating for Engineering Team
-                </div>
-              )}
-
-
+            <div className="flex flex-col gap-6 items-center justify-center text-center max-w-3xl mx-auto">
+              <div className="relative w-full group">
+                  <Input
+                    value={eventName}
+                    onChange={(e) => setEventName(e.target.value)}
+                    placeholder="New Event Name"
+                    className="text-4xl md:text-5xl font-bold text-center border-none shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/20 h-auto py-4 px-4 w-full bg-transparent break-words whitespace-normal tracking-tight transition-all"
+                    required
+                    autoFocus
+                  />
+                  {/* Subtle underline effect on focus/hover */}
+                  <div className="absolute bottom-2 left-1/4 right-1/4 h-px bg-foreground/10 group-focus-within:bg-primary/50 transition-colors" />
+              </div>
+              <p className="text-muted-foreground text-lg">Let's get everyone together. Start by giving it a name.</p>
             </div>
 
             {/* Columns Container */}
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
 
               {/* Left Column: Dates/Days */}
-              <div className="flex flex-col gap-4 w-full h-full">
-                <div className="text-center md:text-left">
-                  <h3 className="text-lg font-medium">When is it happening?</h3>
+              <div className="flex flex-col gap-6 w-full h-full">
+                <div className="flex items-center gap-3">
+                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">1</div>
+                     <h3 className="text-xl font-semibold tracking-tight">When is it happening?</h3>
                 </div>
 
-                <Card className="p-4 border shadow-sm flex flex-col items-center flex-1 min-h-[350px]">
-                  {/* Toggle Inside Card for Alignment */}
-                   <div className="flex bg-muted p-1 rounded-lg w-full max-w-xs mb-6">
-                    <button
-                        type="button"
-                        className={cn("flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all", mode === 'date' ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground")}
-                        onClick={() => setMode('date')}
-                    >
-                        Specific Dates
-                    </button>
-                    <button
-                        type="button"
-                        className={cn("flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all", mode === 'days' ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground")}
-                        onClick={() => setMode('days')}
-                    >
-                        Days of Week
-                    </button>
-                  </div>
+                <Card className="p-1 border shadow-lg shadow-black/5 bg-card/60 backdrop-blur-sm flex flex-col items-center flex-1 min-h-[420px] rounded-xl overflow-hidden ring-1 ring-black/5">
+                   <div className="w-full p-4 border-b bg-muted/30">
+                     {/* Toggle Inside Card */}
+                      <div className="flex bg-muted p-1 rounded-lg w-full max-w-sm mx-auto shadow-inner">
+                       <button
+                           type="button"
+                           className={cn("flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200", mode === 'date' ? "bg-background shadow-sm text-foreground scale-[1.02]" : "text-muted-foreground hover:text-foreground")}
+                           onClick={() => setMode('date')}
+                       >
+                           Specific Dates
+                       </button>
+                       <button
+                           type="button"
+                           className={cn("flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200", mode === 'days' ? "bg-background shadow-sm text-foreground scale-[1.02]" : "text-muted-foreground hover:text-foreground")}
+                           onClick={() => setMode('days')}
+                       >
+                           Days of Week
+                       </button>
+                     </div>
+                   </div>
 
-                  {mode === 'date' ? (
-                      <div className="flex flex-col items-center">
-                          {/* Custom Static Navigation */}
-                          <div className="flex items-center justify-between w-full max-w-[260px] mb-2 px-1">
-                              <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}
-                              >
-                                  <ChevronLeft className="h-4 w-4" />
-                              </Button>
-                              <span className="text-sm font-medium">
-                                  {format(currentMonth, 'MMMM yyyy')}
-                              </span>
-                              <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}
-                              >
-                                  <ChevronRight className="h-4 w-4" />
-                              </Button>
-                          </div>
+                   <div className="flex-1 w-full p-6 flex flex-col items-center justify-center">
+                   {mode === 'date' ? (
+                       <div className="flex flex-col items-center w-full">
+                           {/* Custom Static Navigation */}
+                           <div className="flex items-center justify-between w-full max-w-[280px] mb-4">
+                               <Button
+                                   type="button"
+                                   variant="outline"
+                                   size="icon"
+                                   className="h-8 w-8 rounded-full border-muted-foreground/20 hover:bg-muted"
+                                   onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}
+                               >
+                                   <ChevronLeft className="h-4 w-4" />
+                               </Button>
+                               <span className="text-base font-semibold capitalize">
+                                   {format(currentMonth, 'MMMM yyyy')}
+                               </span>
+                               <Button
+                                   type="button"
+                                   variant="outline"
+                                   size="icon"
+                                   className="h-8 w-8 rounded-full border-muted-foreground/20 hover:bg-muted"
+                                   onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}
+                               >
+                                   <ChevronRight className="h-4 w-4" />
+                               </Button>
+                           </div>
 
-                          <Calendar
-                            mode="range"
-                            selected={dateRange}
-                            onSelect={handleDateSelect}
-                            month={currentMonth}
-                            onMonthChange={setCurrentMonth}
-                            className="rounded-md border-none"
-                            numberOfMonths={1}
-                            classNames={{
-                                caption: 'hidden', // Hide default header (month year)
-                                nav: 'hidden'      // Hide default navigation arrows
-                            }}
-                          />
-                      </div>
-                  ) : (
-                      <div className="flex flex-col gap-3 w-full max-w-[200px]">
-                          {daysOfWeek.map(day => (
-                              <div key={day} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded-md transition-colors">
-                                  <Checkbox
-                                    id={day}
-                                    checked={selectedDays.includes(day)}
-                                    onCheckedChange={() => toggleDay(day)}
-                                  />
-                                  <label
-                                    htmlFor={day}
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                                  >
-                                    {day}
-                                  </label>
-                              </div>
-                          ))}
-                      </div>
-                  )}
+                           <Calendar
+                             mode="range"
+                             selected={dateRange}
+                             onSelect={handleDateSelect}
+                             month={currentMonth}
+                             onMonthChange={setCurrentMonth}
+                             className="rounded-lg border-2 border-muted/20 p-4 shadow-sm bg-background"
+                             numberOfMonths={1}
+                             classNames={{
+                                 caption: 'hidden',
+                                 nav: 'hidden',
+                                 day_button: cn(buttonVariants({ variant: "ghost" }), "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-md"),
+                                 selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-md",
+                                 today: "bg-accent/50 text-accent-foreground font-bold rounded-md",
+                             }}
+                           />
+                           {dateRange?.from && (
+                             <div className="mt-6 text-sm font-medium bg-primary/5 text-primary px-4 py-2 rounded-full border border-primary/10">
+                                {format(dateRange.from, 'MMM d')}
+                                {dateRange.to && ` — ${format(dateRange.to, 'MMM d, yyyy')}`}
+                             </div>
+                           )}
+                       </div>
+                   ) : (
+                       <div className="flex flex-col gap-3 w-full max-w-[260px]">
+                           {daysOfWeek.map(day => {
+                               const isSelected = selectedDays.includes(day);
+                               return (
+                               <div
+                                   key={day}
+                                   className={cn(
+                                       "flex items-center space-x-3 p-3 rounded-xl transition-all cursor-pointer border-2",
+                                       isSelected ? "border-primary bg-primary/5 shadow-sm" : "border-transparent hover:bg-muted/50"
+                                   )}
+                                   onClick={() => toggleDay(day)}
+                               >
+                                   <Checkbox
+                                     id={day}
+                                     checked={isSelected}
+                                     onCheckedChange={() => toggleDay(day)}
+                                     className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                   />
+                                   <label
+                                     htmlFor={day}
+                                     className={cn("text-base font-medium leading-none cursor-pointer flex-1", isSelected ? "text-primary" : "text-muted-foreground")}
+                                   >
+                                     {day}
+                                   </label>
+                                   {isSelected && <div className="h-2 w-2 rounded-full bg-primary animate-in zoom-in" />}
+                               </div>
+                           )})}
+                            <div className="mt-4 text-center">
+                                <span className="text-sm font-medium bg-secondary text-secondary-foreground px-3 py-1 rounded-full">
+                                    {selectedDays.length} days selected
+                                </span>
+                            </div>
+                       </div>
+                   )}
+                   </div>
                 </Card>
-
-                {/* Footer Text */}
-                <div className="min-h-[20px]">
-                    {mode === 'date' && dateRange?.from && (
-                    <p className="text-sm text-muted-foreground text-center md:text-left">
-                        Selected: {format(dateRange.from, 'PPP')}
-                        {dateRange.to && ` - ${format(dateRange.to, 'PPP')}`}
-                    </p>
-                    )}
-                    {mode === 'days' && (
-                         <p className="text-sm text-muted-foreground text-center md:text-left">
-                            Selected: {selectedDays.length} days
-                        </p>
-                    )}
-                </div>
               </div>
 
               {/* Right Column: Times */}
-              <div className="flex flex-col gap-4 w-full h-full">
-                 <div className="text-center md:text-left">
-                  <h3 className="text-lg font-medium">What times might work?</h3>
+              <div className="flex flex-col gap-6 w-full h-full">
+                 <div className="flex items-center gap-3">
+                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">2</div>
+                     <h3 className="text-xl font-semibold tracking-tight">What times might work?</h3>
                 </div>
 
-                <Card className="p-6 border shadow-sm space-y-6 flex flex-col justify-center flex-1 min-h-[350px]">
-                  <div className="grid grid-cols-[100px_1fr] gap-4 items-center">
-                    <Label htmlFor="earliest" className="text-right text-muted-foreground">No earlier than:</Label>
-                    <Select
-                      value={earliestTime}
-                      onValueChange={setEarliestTime}
-                    >
-                      <SelectTrigger id="earliest">
-                        <SelectValue placeholder="Select time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {timeOptions.map((t) => (
-                          <SelectItem key={`start-${t.value}`} value={t.value}>
-                            {t.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <Card className="p-8 border shadow-lg shadow-black/5 bg-card/60 backdrop-blur-sm space-y-8 flex flex-col justify-center flex-1 min-h-[420px] rounded-xl ring-1 ring-black/5 relative overflow-hidden">
+                   {/* Decorative background element */}
+                   <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
 
-                  <div className="grid grid-cols-[100px_1fr] gap-4 items-center">
-                    <Label htmlFor="latest" className="text-right text-muted-foreground">No later than:</Label>
-                    <Select
-                      value={latestTime}
-                      onValueChange={setLatestTime}
-                    >
-                      <SelectTrigger id="latest">
-                        <SelectValue placeholder="Select time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {timeOptions.map((t) => (
-                          <SelectItem key={`end-${t.value}`} value={t.value}>
-                            {t.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="pt-4 border-t">
-                    <div className="grid grid-cols-[100px_1fr] gap-4 items-center">
-                      <Label className="text-right text-muted-foreground">Time Zone:</Label>
-                      <div className="text-sm font-medium">
-                        {Intl.DateTimeFormat().resolvedOptions().timeZone}
+                  <div className="space-y-6 relative z-10">
+                      <div className="grid gap-2">
+                        <Label htmlFor="earliest" className="text-sm font-semibold text-muted-foreground uppercase tracking-wider pl-1">No earlier than</Label>
+                        <Select
+                          value={earliestTime}
+                          onValueChange={setEarliestTime}
+                        >
+                          <SelectTrigger id="earliest" className="h-14 text-lg px-4 rounded-xl border-muted-foreground/20 bg-background/50 hover:bg-background transition-colors focus:ring-primary/20">
+                            <SelectValue placeholder="Select time" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timeOptions.map((t) => (
+                              <SelectItem key={`start-${t.value}`} value={t.value}>
+                                {t.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
+
+                      <div className="grid gap-2">
+                        <Label htmlFor="latest" className="text-sm font-semibold text-muted-foreground uppercase tracking-wider pl-1">No later than</Label>
+                        <Select
+                          value={latestTime}
+                          onValueChange={setLatestTime}
+                        >
+                          <SelectTrigger id="latest" className="h-14 text-lg px-4 rounded-xl border-muted-foreground/20 bg-background/50 hover:bg-background transition-colors focus:ring-primary/20">
+                            <SelectValue placeholder="Select time" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timeOptions.map((t) => (
+                              <SelectItem key={`end-${t.value}`} value={t.value}>
+                                {t.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                  </div>
+
+                  <div className="pt-8 mt-auto border-t border-dashed border-border/60">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground font-medium">Time Zone</span>
+                      <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-lg border border-border/50">
+                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                        <span className="font-semibold text-foreground">{Intl.DateTimeFormat().resolvedOptions().timeZone}</span>
                       </div>
                     </div>
+                   </div>
                 </Card>
-
-                {/* Empty Footer for Balance */}
-                <div className="min-h-[20px]"></div>
               </div>
             </div>
 
-            {/* Bottom Action Bar */}
-            <div className="flex justify-end max-w-4xl mx-auto pt-4 border-t">
-                <div className="flex items-center gap-4">
-                <span className="text-muted-foreground font-medium">Ready?</span>
-                <Button
-                    type="submit"
-                    size="lg"
-                    disabled={
-                        !eventName ||
-                        (mode === 'date' && !dateRange?.from) ||
-                        (mode === 'days' && selectedDays.length === 0)
-                    }>
-                    Create Event
-                </Button>
+            {/* Bottom Action Bar (Fixed/Floating) */}
+            <div className="fixed bottom-0 left-0 right-0 p-6 bg-background/80 backdrop-blur-lg border-t z-40">
+                <div className={cn("max-w-6xl mx-auto flex items-center justify-between transition-all duration-300", isAuthenticated ? "md:ml-64" : "")}>
+                    <div className="hidden md:block text-sm text-muted-foreground">
+                        {mode === 'date' && dateRange?.from ? (
+                           <span>Selected: <span className="font-medium text-foreground">{format(dateRange.from, 'MMM d')} - {dateRange.to ? format(dateRange.to, 'MMM d') : '...'}</span></span>
+                        ) : (
+                           <span>Almost done!</span>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-6 ml-auto">
+                        <span className="text-muted-foreground font-medium hidden sm:inline-block">Ready to schedule?</span>
+                        <Button
+                            type="submit"
+                            size="lg"
+                            className="h-12 px-8 text-base font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all rounded-full"
+                            disabled={
+                                !eventName ||
+                                (mode === 'date' && !dateRange?.from) ||
+                                (mode === 'days' && selectedDays.length === 0)
+                            }>
+                            Create Event
+                            <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                        </Button>
+                    </div>
                 </div>
             </div>
           </form>

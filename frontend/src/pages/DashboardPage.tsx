@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Calendar, Users, Clock, ArrowRight, MoreHorizontal, Loader2 } from 'lucide-react'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
 import { format, parseISO } from 'date-fns'
@@ -114,8 +114,6 @@ export function DashboardPage() {
                     title={event.title}
                     team={event.team_id ? 'Team Event' : 'Personal Event'} // We'd need to fetch team name in a join ideally
                     date={event.created_at} // TODO: Use actual start date
-                    responses={0} // TODO: Count participants
-                    total={0}
                     id={event.id}
                 />
             ))}
@@ -154,7 +152,7 @@ export function DashboardPage() {
   )
 }
 
-function EventCard({ title, team, date, responses, total, id }: { title: string; team: string; date: string; responses: number; total: number, id: string }) {
+function EventCard({ title, team, date, id }: { title: string; team: string; date: string; id: string }) {
     let displayDate = date
     try {
         displayDate = format(parseISO(date), 'MMM d, h:mm a')

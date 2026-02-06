@@ -2,12 +2,12 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Calendar, Search, Clock, CheckCircle, AlertCircle, MoreHorizontal, Loader2, Plus } from 'lucide-react'
+import { Calendar, Search, Clock, MoreHorizontal, Loader2, Plus } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
-import { format, parseISO, isPast, isFuture } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -52,11 +52,7 @@ export function EventsPage() {
   // Since we don't strictly have start_dates for every event type yet, we'll use created_at as a proxy if needed,
   // or just put everything in "Upcoming" for visibility if date is missing.
 
-  const upcomingEvents = filteredEvents.filter(e => {
-       // If we have specific dates, check the last one?
-       // For now simpler: Display all as upcoming unless obviously past?
-       return true
-  })
+
 
   // Mock splitting for tabs to show UI working (since we might not have enough data to test past)
   // Real implementation: check e.end_date or configuration dates

@@ -9,125 +9,94 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 export function EventsPage() {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border bg-card p-4 flex flex-col">
-        <Link to="/" className="flex items-center mb-8">
-          <img src="/alyne-logo.svg" alt="Alyne" className="h-6" />
-        </Link>
-
-        <nav className="space-y-1 flex-1">
-          <NavItem href="/dashboard" icon={<Calendar className="h-4 w-4" />} label="Dashboard" />
-          <NavItem href="/teams" icon={<Users className="h-4 w-4" />} label="Teams" />
-          <NavItem href="/events" icon={<Calendar className="h-4 w-4" />} label="Events" active />
-        </nav>
-
-        <div className="pt-4 border-t border-border">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src="" />
-              <AvatarFallback>JD</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">John Doe</p>
-              <p className="text-xs text-muted-foreground truncate">john@example.com</p>
-            </div>
-          </div>
+    <>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">Events</h1>
+          <p className="text-muted-foreground">Manage all your team events</p>
         </div>
-      </aside>
 
-      {/* Main Content */}
-      <main className="ml-64 p-8">
-        <div className="max-w-5xl">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-bold mb-1">Events</h1>
-              <p className="text-muted-foreground">Manage all your team events</p>
-            </div>
+      </div>
 
-          </div>
+      {/* Search */}
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input placeholder="Search events..." className="pl-10" />
+      </div>
 
-          {/* Search */}
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search events..." className="pl-10" />
-          </div>
+      {/* Tabs */}
+      <Tabs defaultValue="upcoming" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+          <TabsTrigger value="pending">Pending Response</TabsTrigger>
+          <TabsTrigger value="past">Past</TabsTrigger>
+        </TabsList>
 
-          {/* Tabs */}
-          <Tabs defaultValue="upcoming" className="w-full">
-            <TabsList className="mb-6">
-              <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-              <TabsTrigger value="pending">Pending Response</TabsTrigger>
-              <TabsTrigger value="past">Past</TabsTrigger>
-            </TabsList>
+        <TabsContent value="upcoming" className="space-y-4">
+          <EventCard
+            title="Weekly Standup"
+            team="Engineering Team"
+            date="Tomorrow"
+            time="10:00 AM - 10:30 AM"
+            status="finalized"
+            responses={6}
+            total={6}
+          />
+          <EventCard
+            title="Project Kickoff"
+            team="Design Team"
+            date="Feb 5, 2025"
+            time="2:00 PM - 3:00 PM"
+            status="finalized"
+            responses={4}
+            total={4}
+          />
+          <EventCard
+            title="Sprint Planning"
+            team="Engineering Team"
+            date="Feb 8, 2025"
+            time="9:00 AM - 10:00 AM"
+            status="finalized"
+            responses={6}
+            total={6}
+          />
+        </TabsContent>
 
-            <TabsContent value="upcoming" className="space-y-4">
-              <EventCard
-                title="Weekly Standup"
-                team="Engineering Team"
-                date="Tomorrow"
-                time="10:00 AM - 10:30 AM"
-                status="finalized"
-                responses={6}
-                total={6}
-              />
-              <EventCard
-                title="Project Kickoff"
-                team="Design Team"
-                date="Feb 5, 2025"
-                time="2:00 PM - 3:00 PM"
-                status="finalized"
-                responses={4}
-                total={4}
-              />
-              <EventCard
-                title="Sprint Planning"
-                team="Engineering Team"
-                date="Feb 8, 2025"
-                time="9:00 AM - 10:00 AM"
-                status="finalized"
-                responses={6}
-                total={6}
-              />
-            </TabsContent>
+        <TabsContent value="pending" className="space-y-4">
+          <EventCard
+            title="Quarterly Review"
+            team="All Hands"
+            date="Feb 15, 2025"
+            time="TBD"
+            status="pending"
+            responses={8}
+            total={15}
+          />
+          <EventCard
+            title="Team Building"
+            team="Engineering Team"
+            date="Feb 20, 2025"
+            time="TBD"
+            status="pending"
+            responses={3}
+            total={6}
+          />
+        </TabsContent>
 
-            <TabsContent value="pending" className="space-y-4">
-              <EventCard
-                title="Quarterly Review"
-                team="All Hands"
-                date="Feb 15, 2025"
-                time="TBD"
-                status="pending"
-                responses={8}
-                total={15}
-              />
-              <EventCard
-                title="Team Building"
-                team="Engineering Team"
-                date="Feb 20, 2025"
-                time="TBD"
-                status="pending"
-                responses={3}
-                total={6}
-              />
-            </TabsContent>
-
-            <TabsContent value="past" className="space-y-4">
-              <EventCard
-                title="Sprint Retrospective"
-                team="Engineering Team"
-                date="Jan 30, 2025"
-                time="3:00 PM - 4:00 PM"
-                status="completed"
-                responses={6}
-                total={6}
-              />
-            </TabsContent>
-          </Tabs>
-        </div>
-      </main>
-    </div>
+        <TabsContent value="past" className="space-y-4">
+          <EventCard
+            title="Sprint Retrospective"
+            team="Engineering Team"
+            date="Jan 30, 2025"
+            time="3:00 PM - 4:00 PM"
+            status="completed"
+            responses={6}
+            total={6}
+          />
+        </TabsContent>
+      </Tabs>
+    </>
   )
 }
 

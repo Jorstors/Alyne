@@ -186,7 +186,7 @@ export function CreateEventPage() {
                 value={eventName}
                 onChange={(e) => setEventName(e.target.value)}
                 placeholder="New Event Name"
-                className="text-4xl font-bold text-center border-none shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/50 h-auto py-2 px-4 max-w-2xl bg-transparent"
+                className="text-3xl md:text-4xl font-bold text-center border-none shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/30 h-auto py-2 px-4 max-w-full bg-transparent break-words whitespace-normal"
                 required
               />
 

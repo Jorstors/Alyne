@@ -114,7 +114,7 @@ export function EventPage() {
 
   return (
     <div className="min-h-screen bg-background">
-       <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border bg-card p-4 flex flex-col hidden md:flex">
+      <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border bg-card p-4 flex flex-col hidden md:flex">
         <Link to="/" className="flex items-center mb-8">
           <img src="/alyne-logo.svg" alt="Alyne" className="h-6" />
         </Link>
@@ -129,7 +129,17 @@ export function EventPage() {
          </div>
       </aside>
 
-      <main className="md:ml-64 p-4 md:p-8">
+      {/* Mobile Header */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur px-4 h-14 flex items-center justify-between">
+          <Link to="/" className="flex items-center">
+             <img src="/alyne-logo.svg" alt="Alyne" className="h-6" />
+          </Link>
+          <div className="flex items-center gap-2">
+             <span className="text-sm font-medium truncate max-w-[150px]">{searchParams.get('name') || 'Event'}</span>
+          </div>
+      </header>
+
+      <main className="md:ml-64 p-4 md:p-8 pt-16 md:pt-8">
         <div className="max-w-6xl mx-auto space-y-8">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

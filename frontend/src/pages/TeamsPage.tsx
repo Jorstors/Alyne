@@ -8,114 +8,68 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 export function TeamsPage() {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border bg-card p-4 flex flex-col">
-        <Link to="/" className="flex items-center mb-8">
-          <img src="/alyne-logo.svg" alt="Alyne" className="h-6" />
+    <>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">Teams</h1>
+          <p className="text-muted-foreground">Manage your scheduling groups</p>
+        </div>
+        <Link to="/teams/new">
+          <Button className="gap-2">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">New Team</span>
+            <span className="sm:hidden">New</span>
+          </Button>
         </Link>
+      </div>
 
-        <nav className="space-y-1 flex-1">
-          <NavItem href="/dashboard" icon={<Calendar className="h-4 w-4" />} label="Dashboard" />
-          <NavItem href="/teams" icon={<Users className="h-4 w-4" />} label="Teams" active />
-          <NavItem href="/events" icon={<Calendar className="h-4 w-4" />} label="Events" />
-        </nav>
+      {/* Search */}
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input placeholder="Search teams..." className="pl-10" />
+      </div>
 
-        <div className="pt-4 border-t border-border">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src="" />
-              <AvatarFallback>JD</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">John Doe</p>
-              <p className="text-xs text-muted-foreground truncate">john@example.com</p>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="ml-64 p-8">
-        <div className="max-w-5xl">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-bold mb-1">Teams</h1>
-              <p className="text-muted-foreground">Manage your scheduling groups</p>
-            </div>
-            <Link to="/teams/new">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                New Team
-              </Button>
-            </Link>
-          </div>
-
-          {/* Search */}
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search teams..." className="pl-10" />
-          </div>
-
-          {/* Teams Grid */}
-          <div className="grid gap-4">
-            <TeamCard
-              name="Engineering Team"
-              description="Weekly standups and sprint planning"
-              members={[
-                { name: "John D", avatar: "" },
-                { name: "Jane S", avatar: "" },
-                { name: "Mike R", avatar: "" },
-                { name: "Sarah K", avatar: "" },
-              ]}
-              moreMembers={2}
-              events={3}
-              role="Leader"
-            />
-            <TeamCard
-              name="Design Team"
-              description="Design reviews and brainstorming sessions"
-              members={[
-                { name: "Alex P", avatar: "" },
-                { name: "Chris M", avatar: "" },
-                { name: "Dana L", avatar: "" },
-              ]}
-              moreMembers={1}
-              events={2}
-              role="Member"
-            />
-            <TeamCard
-              name="Marketing"
-              description="Campaign planning and content reviews"
-              members={[
-                { name: "Sam W", avatar: "" },
-                { name: "Taylor B", avatar: "" },
-              ]}
-              moreMembers={0}
-              events={1}
-              role="Member"
-            />
-          </div>
-        </div>
-      </main>
-    </div>
-  )
-}
-
-function NavItem({ href, icon, label, active = false }: { href: string; icon: React.ReactNode; label: string; active?: boolean }) {
-  return (
-    <Link
-      to={href}
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-        active
-          ? 'bg-primary/10 text-primary'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-      }`}
-    >
-      {icon}
-      {label}
-    </Link>
+      {/* Teams Grid */}
+      <div className="grid gap-4">
+        <TeamCard
+          name="Engineering Team"
+          description="Weekly standups and sprint planning"
+          members={[
+            { name: "John D", avatar: "" },
+            { name: "Jane S", avatar: "" },
+            { name: "Mike R", avatar: "" },
+            { name: "Sarah K", avatar: "" },
+          ]}
+          moreMembers={2}
+          events={3}
+          role="Leader"
+        />
+        <TeamCard
+          name="Design Team"
+          description="Design reviews and brainstorming sessions"
+          members={[
+            { name: "Alex P", avatar: "" },
+            { name: "Chris M", avatar: "" },
+            { name: "Dana L", avatar: "" },
+          ]}
+          moreMembers={1}
+          events={2}
+          role="Member"
+        />
+        <TeamCard
+          name="Marketing"
+          description="Campaign planning and content reviews"
+          members={[
+            { name: "Sam W", avatar: "" },
+            { name: "Taylor B", avatar: "" },
+          ]}
+          moreMembers={0}
+          events={1}
+          role="Member"
+        />
+      </div>
+    </>
   )
 }
 

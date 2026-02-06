@@ -15,6 +15,24 @@ export function EventPage() {
   const [isSignedIn, setIsSignedIn] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
 
+  // Availability State (Moved up to fix Hook Rule violation)
+  const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set())
+
+  const handleSlotToggle = (slotId: string, forceState?: 'add' | 'remove') => {
+    setSelectedSlots(prev => {
+      const next = new Set(prev)
+      const exists = next.has(slotId)
+      const action = forceState || (exists ? 'remove' : 'add')
+
+      if (action === 'add') {
+        next.add(slotId)
+      } else {
+        next.delete(slotId)
+      }
+      return next
+    })
+  }
+
   // Parse Config
   // Determine API URL (TODO: Share this constant)
   const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api')
@@ -84,24 +102,6 @@ export function EventPage() {
 
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>
   if (error) return <div className="flex h-screen items-center justify-center text-destructive">{error}</div>
-
-  // Availability State
-  const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set())
-
-  const handleSlotToggle = (slotId: string, forceState?: 'add' | 'remove') => {
-    setSelectedSlots(prev => {
-      const next = new Set(prev)
-      const exists = next.has(slotId)
-      const action = forceState || (exists ? 'remove' : 'add')
-
-      if (action === 'add') {
-        next.add(slotId)
-      } else {
-        next.delete(slotId)
-      }
-      return next
-    })
-  }
 
   if (!isSignedIn) {
     return (

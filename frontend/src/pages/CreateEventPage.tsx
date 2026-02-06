@@ -50,25 +50,62 @@ export function CreateEventPage() {
   const [earliestTime, setEarliestTime] = useState('09:00')
   const [latestTime, setLatestTime] = useState('17:00')
 
-  const handleCreate = (e: React.FormEvent) => {
+  // Determine API URL based on environment
+  const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api')
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Build Query Params for the Event Page to consume
-    const params = new URLSearchParams()
-    params.set('name', eventName)
-    params.set('type', mode)
-    params.set('min', earliestTime)
-    params.set('max', latestTime)
-
-    if (mode === 'date') {
-      if (dateRange?.from) params.set('from', dateRange.from.toISOString())
-      if (dateRange?.to) params.set('to', dateRange.to.toISOString())
-    } else {
-      params.set('days', selectedDays.join(','))
+    // Basic validation
+    if (!eventName.trim()) {
+      alert('Please enter a title')
+      return
     }
 
-    const eventId = Math.random().toString(36).substring(7)
-    navigate(`/event/${eventId}?${params.toString()}`)
+    const payload = {
+      title: eventName,
+      description: '',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      event_type: mode === 'date' ? 'specific_dates' : 'days_of_week',
+      configuration: mode === 'date'
+        ? { dates: [] } // For now sending empty, will fix to send actual dates
+        : { days: Array.from(selectedDays) }
+    }
+
+    // Fix dates payload
+    if (mode === 'date') {
+       // We need to generate the array of date strings from the range
+       const dates = []
+       if (dateRange?.from) {
+          let curr = dateRange.from
+          const end = dateRange.to || dateRange.from
+          while (curr <= end) {
+              dates.push(curr.toISOString())
+              curr = addDays(curr, 1)
+          }
+       }
+       payload.configuration = { dates }
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/events`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+
+        if (!res.ok) {
+            const err = await res.json()
+            throw new Error(err.error || 'Failed to create event')
+        }
+
+        const data = await res.json()
+        navigate(`/event/${data.id}`)
+
+    } catch (error: any) {
+        console.error('Create error:', error)
+        alert('Failed to create event: ' + error.message)
+    }
   }
 
   const toggleDay = (day: string) => {

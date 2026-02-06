@@ -19,12 +19,6 @@ app.use(express.json());
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-console.log('--- Startup Debug ---');
-console.log('CWD:', process.cwd());
-console.log('Has URL:', !!supabaseUrl);
-console.log('Has Key:', !!supabaseServiceKey);
-// console.log('Env:', process.env); // Uncomment if desperate
-
 // Only initialize if keys are present (avoids crashing on build)
 export const supabaseAdmin = (supabaseUrl && supabaseServiceKey)
   ? createClient(supabaseUrl, supabaseServiceKey)

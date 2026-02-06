@@ -100,6 +100,55 @@ export function EventPage() {
     setTimeout(() => setIsCopied(false), 2000)
   }
 
+  // Group Availability Calculation
+  const [groupCounts, setGroupCounts] = useState<Map<string, number>>(new Map())
+  const [totalParticipants, setTotalParticipants] = useState(0)
+
+  // Re-calculate group heatmap whenever eventData changes
+  useEffect(() => {
+    if (!eventData?.participants) return
+
+    const counts = new Map<string, number>()
+    let total = 0
+
+    eventData.participants.forEach((p: any) => {
+        total++
+        if (Array.isArray(p.availability)) {
+            p.availability.forEach((slot: string) => {
+                counts.set(slot, (counts.get(slot) || 0) + 1)
+            })
+        }
+    })
+
+    setGroupCounts(counts)
+    setTotalParticipants(total)
+  }, [eventData])
+
+  // Auto-Save Availability
+  useEffect(() => {
+    if (!isSignedIn || !name) return
+
+    const timer = setTimeout(async () => {
+      try {
+        console.log('Saving availability...', Array.from(selectedSlots))
+        const res = await fetch(`${API_URL}/events/${id}/participate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name,
+                availability: Array.from(selectedSlots)
+            })
+        })
+        if (!res.ok) throw new Error('Failed to save')
+        console.log('Saved successfully')
+      } catch (err) {
+        console.error('Save error:', err)
+      }
+    }, 1000) // Debounce 1s
+
+    return () => clearTimeout(timer)
+  }, [selectedSlots, isSignedIn, name, id, API_URL])
+
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>
   if (error) return <div className="flex h-screen items-center justify-center text-destructive">{error}</div>
 
@@ -155,6 +204,19 @@ export function EventPage() {
                     {eventData?.event_type === 'days_of_week' ? 'Weekly Recurring' : 'Specific Dates'}
                 </p>
             </div>
+             <div className="px-2">
+                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Participants ({totalParticipants})</h4>
+                 <div className="space-y-2">
+                     {eventData?.participants?.map((p: any) => (
+                         <div key={p.id || p.name} className="flex items-center gap-2 text-sm">
+                             <Avatar className="h-6 w-6">
+                                 <AvatarFallback className="text-[10px]">{p.name?.charAt(0)}</AvatarFallback>
+                             </Avatar>
+                             <span className="truncate">{p.name}</span>
+                         </div>
+                     ))}
+                 </div>
+             </div>
          </div>
       </aside>
 
@@ -174,7 +236,7 @@ export function EventPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{eventData?.title}</h1>
-                    <p className="text-muted-foreground">Please paint your availability below.</p>
+                    <p className="text-muted-foreground">Please paint your availability below. Changes save automatically.</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={copyLink} className="gap-2">
                     {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -211,30 +273,35 @@ export function EventPage() {
                             <CardTitle className="text-lg">Group's Availability</CardTitle>
                              <div className="flex items-center gap-2 text-sm">
                                 <span className="w-3 h-3 bg-green-500/80 rounded-sm"></span>
-                                <span className="text-muted-foreground">3/5 Available</span>
+                                <span className="text-muted-foreground">{totalParticipants > 0 ? `${totalParticipants} Participants` : 'No data yet'}</span>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 overflow-auto max-h-[600px]">
                          <HeatmapGrid
                           columns={columns}
-                          groupAvailability={selectedSlots}
+                          groupCounts={groupCounts}
+                          totalParticipants={totalParticipants}
                         />
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Attendees List */}
-            <Card>
+            {/* Attendees List (Mobile / Bottom) */}
+            <Card className="md:hidden">
                 <CardHeader>
-                    <CardTitle className="text-lg">Attendees (1)</CardTitle>
+                    <CardTitle className="text-lg">Attendees ({totalParticipants})</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                            <AvatarFallback>{name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm font-medium">{name} (You)</span>
+                    <div className="space-y-2">
+                        {eventData?.participants?.map((p: any) => (
+                             <div key={p.id || p.name} className="flex items-center gap-3">
+                                 <Avatar className="h-8 w-8">
+                                     <AvatarFallback>{p.name?.charAt(0)}</AvatarFallback>
+                                 </Avatar>
+                                 <span className="text-sm font-medium">{p.name} {p.name === name ? '(You)' : ''}</span>
+                             </div>
+                         ))}
                     </div>
                 </CardContent>
             </Card>
@@ -327,7 +394,7 @@ function InteractiveGrid({ columns, selectedSlots, onSlotToggle }: InteractiveGr
     )
 }
 
-function HeatmapGrid({ columns, groupAvailability }: { columns: { label: string; subLabel?: string }[], groupAvailability: Set<string> }) {
+function HeatmapGrid({ columns, groupCounts, totalParticipants }: { columns: { label: string; subLabel?: string }[], groupCounts: Map<string, number>, totalParticipants: number }) {
      const rows = Array.from({ length: 9 })
 
      return (
@@ -356,18 +423,26 @@ function HeatmapGrid({ columns, groupAvailability }: { columns: { label: string;
                             </div>
                             {columns.map((_, j) => {
                                 const slotId = `${i}-${j}`
-                                // For now, simple 1.0 opacity if user selected it
-                                const opacity = groupAvailability.has(slotId) ? 1.0 : 0
+                                const count = groupCounts.get(slotId) || 0
+                                // Opacity = count / max(1, total)
+                                const opacity = totalParticipants > 0 ? (count / totalParticipants) : 0
+
                                 return (
                                 <div
                                     key={`${i}-${j}`}
-                                    className="bg-background h-10 relative"
+                                    className="bg-background h-10 relative group"
                                 >
-                                    {opacity > 0 && (
+                                    {count > 0 && (
                                         <div
-                                            className="absolute inset-0 bg-green-500"
-                                            style={{ opacity }}
+                                            className="absolute inset-0 bg-green-500 transition-all duration-500"
+                                            style={{ opacity: Math.max(0.1, opacity) }} // Min 0.1 so even single votes are visible
                                         />
+                                    )}
+                                    {/* Tooltip on hover */}
+                                    {count > 0 && (
+                                        <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded mb-1 whitespace-nowrap z-10">
+                                            {count} / {totalParticipants}
+                                        </div>
                                     )}
                                 </div>
                             )})}

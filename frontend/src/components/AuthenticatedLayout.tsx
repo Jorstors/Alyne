@@ -1,19 +1,33 @@
 import { useState } from 'react'
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Calendar, Users, Menu, X, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/components/AuthProvider'
+import { supabase } from '@/lib/supabase'
 
 export function AuthenticatedLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user } = useAuth()
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    navigate('/login')
+  }
 
   const isActive = (path: string) => {
       // Exact match for dashboard, startswith for others
       if (path === '/dashboard') return location.pathname === '/dashboard'
       return location.pathname.startsWith(path)
   }
+
+  // Helper to get initials
+  const initials = user?.email?.substring(0, 2).toUpperCase() || 'JD'
+  const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'
+  const avatarUrl = user?.user_metadata?.avatar_url
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row">
@@ -38,14 +52,15 @@ export function AuthenticatedLayout() {
               <div className="mt-8 pt-4 border-t border-border">
                   <div className="flex items-center gap-3 mb-4">
                     <Avatar className="h-8 w-8">
-                       <AvatarFallback>JD</AvatarFallback>
+                       <AvatarImage src={avatarUrl} />
+                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
-                    <div>
-                        <p className="text-sm font-medium">John Doe</p>
-                        <p className="text-xs text-muted-foreground">john@example.com</p>
+                    <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{displayName}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full justify-start gap-2 text-destructive hover:text-destructive">
+                  <Button variant="outline" className="w-full justify-start gap-2 text-destructive hover:text-destructive" onClick={handleSignOut}>
                       <LogOut className="h-4 w-4" />
                       Sign out
                   </Button>
@@ -68,13 +83,16 @@ export function AuthenticatedLayout() {
         <div className="pt-4 border-t border-border">
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">
-              <AvatarImage src="" />
-              <AvatarFallback>JD</AvatarFallback>
+              <AvatarImage src={avatarUrl} />
+              <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">John Doe</p>
-              <p className="text-xs text-muted-foreground truncate">john@example.com</p>
+              <p className="text-sm font-medium truncate">{displayName}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={handleSignOut}>
+               <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </aside>

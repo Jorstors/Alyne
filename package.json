@@ -1,0 +1,8 @@
+{
+  "name": "alyne-root",
+  "private": true,
+  "scripts": {
+    "vercel-build": "cd frontend && npm run build",
+    "vercel-install": "npm install && cd frontend && npm install && cd ../backend && npm install"
+  }
+}

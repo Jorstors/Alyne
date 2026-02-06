@@ -142,7 +142,7 @@ export function CreateEventPage() {
     })
   }
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false) // Default to anonymous for "Quick Event"
+  const [isAuthenticated] = useState(false) // Default to anonymous for "Quick Event"
 
 
 

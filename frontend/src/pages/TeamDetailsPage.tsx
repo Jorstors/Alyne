@@ -1,10 +1,8 @@
 import { Link, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Calendar, Users, Plus, Search, ArrowLeft, MoreHorizontal, CheckCircle, AlertCircle, Clock } from 'lucide-react'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Users, Plus, Search, ArrowLeft, MoreHorizontal, CheckCircle, Clock } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 export function TeamDetailsPage() {
   const { id } = useParams()

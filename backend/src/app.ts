@@ -20,11 +20,13 @@ const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Only initialize if keys are present (avoids crashing on build)
-export const supabaseAdmin = (supabaseUrl && supabaseServiceKey) 
-  ? createClient(supabaseUrl, supabaseServiceKey) 
+export const supabaseAdmin = (supabaseUrl && supabaseServiceKey)
+  ? createClient(supabaseUrl, supabaseServiceKey)
   : null;
 
 // Routes
+import eventsRouter from './routes/events';
+
 app.get('/', (req, res) => {
   res.json({ message: 'Alyne API is running!' });
 });
@@ -33,6 +35,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.use('/api/events', eventsRouter);
+
 // Example: Admin route that client shouldn't do
 app.post('/api/admin/system-check', async (req, res) => {
     // Only allow if we have the service key
@@ -40,15 +44,15 @@ app.post('/api/admin/system-check', async (req, res) => {
         res.status(500).json({ error: 'Server configuration error' });
         return;
     }
-    
+
     // Example: List all users (something strictly admin)
     const { data, error } = await supabaseAdmin.auth.admin.listUsers();
-    
+
     if (error) {
         res.status(400).json({ error: error.message });
         return;
     }
-    
+
     res.json({ users_count: data.users.length });
 });
 

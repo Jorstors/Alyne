@@ -16,50 +16,58 @@ export function EventPage() {
   const [isCopied, setIsCopied] = useState(false)
 
   // Parse Config
-  const type = searchParams.get('type') || 'date'
-  const daysParam = searchParams.get('days')
-  const fromParam = searchParams.get('from')
+  // Determine API URL (TODO: Share this constant)
+  const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api')
 
-  // Determine Columns
-  let columns: { label: string; subLabel?: string }[] = []
+  // Fetch Event Data
+  const [eventData, setEventData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  if (type === 'days' && daysParam) {
-    columns = daysParam.split(',').map(d => ({ label: d }))
-  } else if (fromParam) {
-     // Generate dates from 'from' param
-     // Default to 5 days if valid from date
-     try {
-       const startDate = parseISO(fromParam)
-       const toParam = searchParams.get('to')
-       let daysCount = 5
+  // Columns State (Hydrated from backend data)
+  const [columns, setColumns] = useState<{ label: string; subLabel?: string }[]>([])
 
-       if (toParam) {
-           const endDate = parseISO(toParam)
-           const diff = differenceInDays(endDate, startDate)
-           daysCount = diff >= 0 ? diff + 1 : 1
-       }
+  useEffect(() => {
+    async function fetchEvent() {
+      try {
+        const res = await fetch(`${API_URL}/events/${id}`)
+        if (!res.ok) throw new Error('Event not found')
+        const data = await res.json()
+        setEventData(data)
 
-       columns = Array.from({ length: daysCount }).map((_, i) => {
-         const date = addDays(startDate, i)
-         return {
-           label: format(date, 'EEE'),
-           subLabel: format(date, 'MMM d')
-         }
-       })
-     } catch (e) {
-       // Fallback
-       columns = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((d, i) => ({
-           label: d,
-           subLabel: `Feb ${10 + i}`
-       }))
-     }
-  } else {
-      // Default Fallback
-       columns = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((d, i) => ({
-           label: d,
-           subLabel: `Feb ${10 + i}`
-       }))
-  }
+        // Hydrate Columns based on configuration
+        const { event_type, configuration } = data
+        let newColumns = []
+
+        if (event_type === 'days_of_week') {
+             // Config: { days: ['Mon', 'Tue'] }
+             newColumns = configuration.days.map((d: string) => ({ label: d }))
+        } else {
+             // Config: { dates: ['2025-02-10', '2025-02-11'] }
+             // Only if dates exists, otherwise fallback
+             if (configuration.dates && configuration.dates.length > 0) {
+                newColumns = configuration.dates.map((d: string) => {
+                     const date = parseISO(d)
+                     return {
+                        label: format(date, 'EEE'),
+                        subLabel: format(date, 'MMM d')
+                     }
+                })
+             } else {
+                 // Fallback if data corrupted
+                 newColumns = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(d => ({ label: d }))
+             }
+        }
+        setColumns(newColumns)
+
+      } catch (e: any) {
+        setError(e.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    if (id) fetchEvent()
+  }, [id, API_URL])
 
   const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,6 +81,9 @@ export function EventPage() {
     setIsCopied(true)
     setTimeout(() => setIsCopied(false), 2000)
   }
+
+  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>
+  if (error) return <div className="flex h-screen items-center justify-center text-destructive">{error}</div>
 
   // Availability State
   const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set())
@@ -139,9 +150,9 @@ export function EventPage() {
          <div className="flex-1">
             <div className="bg-primary/5 rounded-lg p-4 mb-4">
                 <h3 className="font-semibold text-primary mb-1">Event Details</h3>
-                <p className="text-sm font-medium">{searchParams.get('name') || 'Weekly Standup'}</p>
+                <p className="text-sm font-medium">{eventData?.title || 'Loading...'}</p>
                  <p className="text-xs text-muted-foreground mt-1">
-                    {type === 'days' ? 'Weekly Recurring' : 'Specific Dates'}
+                    {eventData?.event_type === 'days_of_week' ? 'Weekly Recurring' : 'Specific Dates'}
                 </p>
             </div>
          </div>
@@ -162,7 +173,7 @@ export function EventPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">{searchParams.get('name') || 'Weekly Standup'}</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">{eventData?.title}</h1>
                     <p className="text-muted-foreground">Please paint your availability below.</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={copyLink} className="gap-2">

@@ -19,6 +19,7 @@ export function EventPage() {
   // Availability State
   const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set())
 
+
   const handleSlotToggle = (slotId: string, forceState?: 'add' | 'remove') => {
     setSelectedSlots(prev => {
       const next = new Set(prev)
@@ -41,6 +42,22 @@ export function EventPage() {
   const [eventData, setEventData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Hydration State
+  const [hasLoaded, setHasLoaded] = useState(false)
+
+  // Hydrate existing availability on load
+  useEffect(() => {
+    if (hasLoaded || !eventData?.participants || !name) return
+
+    const myRecord = eventData.participants.find((p: any) => p.name === name)
+    if (myRecord) {
+        if (Array.isArray(myRecord.availability)) {
+            setSelectedSlots(new Set(myRecord.availability))
+        }
+        setHasLoaded(true)
+    }
+  }, [eventData, name, hasLoaded])
 
   // Columns State
   const [columns, setColumns] = useState<{ label: string; subLabel?: string }[]>([])
@@ -479,7 +496,7 @@ function InteractiveGrid({ columns, selectedSlots, onSlotToggle }: InteractiveGr
                     const hour = 9 + i
                     const time = `${hour > 12 ? hour - 12 : hour} ${hour >= 12 ? 'PM' : 'AM'}`
                     return (
-                        <>
+                        <div key={i} className="contents">
                             <div className="bg-background p-2 text-xs text-right text-muted-foreground -mt-2.5">
                                 {time}
                             </div>
@@ -498,7 +515,7 @@ function InteractiveGrid({ columns, selectedSlots, onSlotToggle }: InteractiveGr
                                     </div>
                                 )
                             })}
-                        </>
+                        </div>
                     )
                 })}
              </div>
@@ -539,7 +556,7 @@ function HeatmapGrid({
                     const hour = 9 + i
                     const time = `${hour > 12 ? hour - 12 : hour} ${hour >= 12 ? 'PM' : 'AM'}`
                     return (
-                        <>
+                        <div key={i} className="contents">
                             <div className="bg-background p-2 text-xs text-right text-muted-foreground -mt-2.5">
                                 {time}
                             </div>
@@ -571,7 +588,7 @@ function HeatmapGrid({
                                     )}
                                 </div>
                             )})}
-                        </>
+                        </div>
                     )
                 })}
              </div>

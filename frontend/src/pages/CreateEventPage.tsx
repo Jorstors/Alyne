@@ -3,10 +3,8 @@ import { useAuth } from '@/components/AuthProvider'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, Calendar as CalendarIcon, Users, ChevronLeft, ChevronRight } from 'lucide-react'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ArrowLeft, ChevronLeft, ChevronRight, Users } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import { useState } from 'react'
 import type { DateRange } from 'react-day-picker'
@@ -20,6 +18,7 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
+import { Sidebar } from '@/components/Sidebar'
 
 export function CreateEventPage() {
   const navigate = useNavigate()
@@ -197,35 +196,12 @@ export function CreateEventPage() {
 
 
   return (
-    <div className="min-h-screen bg-background font-sans">
+    <div className="min-h-screen bg-background flex flex-col md:flex-row">
       {/* Sidebar - Only show if authenticated */}
-      {isAuthenticated && (
-      <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border bg-card p-4 flex flex-col hidden md:flex z-50">
-        <Link to="/" className="flex items-center mb-8 px-2">
-          <img src="/alyne-logo.svg" alt="Alyne" className="h-6" />
-        </Link>
-        <nav className="space-y-1 flex-1">
-          <NavItem href="/dashboard" icon={<CalendarIcon className="h-4 w-4" />} label="Dashboard" />
-          <NavItem href="/teams" icon={<Users className="h-4 w-4" />} label="Teams" />
-          <NavItem href="/events" icon={<CalendarIcon className="h-4 w-4" />} label="Events" active />
-        </nav>
-        <div className="pt-4 border-t border-border">
-          <div className="flex items-center gap-3 px-2">
-             <Avatar className="h-8 w-8 ring-2 ring-border">
-               <AvatarImage src={user?.user_metadata?.avatar_url} />
-               <AvatarFallback>{user?.user_metadata?.name?.charAt(0) || 'U'}</AvatarFallback>
-             </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.user_metadata?.name || 'User'}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-            </div>
-          </div>
-        </div>
-      </aside>
-      )}
+      {isAuthenticated && <Sidebar />}
 
       {/* Main Content */}
-      <main className={cn("min-h-screen transition-all duration-300", isAuthenticated ? "md:ml-64" : "")}>
+      <main className={cn("min-h-screen transition-all duration-300 flex-1 min-w-0", isAuthenticated ? "md:ml-72" : "")}>
          {/* Top Navigation Bar */}
          <div className="p-6 md:p-8 flex justify-between items-center max-w-6xl mx-auto w-full">
                <Link to={backLink} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2 pr-4 rounded-full hover:bg-muted/50">
@@ -446,8 +422,11 @@ export function CreateEventPage() {
             </div>
 
             {/* Bottom Action Bar (Fixed/Floating) */}
-            <div className="fixed bottom-0 left-0 right-0 p-6 bg-background/80 backdrop-blur-lg border-t z-40">
-                <div className={cn("max-w-6xl mx-auto flex items-center justify-between transition-all duration-300", isAuthenticated ? "md:ml-64" : "")}>
+            <div className={cn(
+                "fixed bottom-0 right-0 p-6 bg-background/80 backdrop-blur-lg border-t z-40 transition-all duration-300",
+                isAuthenticated ? "left-0 md:left-72" : "left-0"
+            )}>
+                <div className="max-w-6xl mx-auto flex items-center justify-between">
                     <div className="hidden md:block text-sm text-muted-foreground">
                         {mode === 'date' && dateRange?.from ? (
                            <span>Selected: <span className="font-medium text-foreground">{format(dateRange.from, 'MMM d')} - {dateRange.to ? format(dateRange.to, 'MMM d') : '...'}</span></span>
@@ -479,18 +458,3 @@ export function CreateEventPage() {
   )
 }
 
-function NavItem({ href, icon, label, active = false }: { href: string; icon: React.ReactNode; label: string; active?: boolean }) {
-  return (
-    <Link
-      to={href}
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-        active
-          ? 'bg-primary/10 text-primary'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-      }`}
-    >
-      {icon}
-      <span>{label}</span>
-    </Link>
-  )
-}

@@ -1,13 +1,14 @@
+import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { format, parseISO } from 'date-fns'
+import { Loader2, Copy, Check, Users } from 'lucide-react'
+import { useAuth } from '@/components/AuthProvider'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Copy, Check, Loader2, ArrowLeft, Users } from 'lucide-react'
-import { useAuth } from '@/components/AuthProvider'
-import { useState, useEffect } from 'react'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { format, parseISO } from 'date-fns'
+import { Sidebar } from '@/components/Sidebar'
 
 export function EventPage() {
   const { id } = useParams()
@@ -281,89 +282,46 @@ export function EventPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/10 font-sans">
-      <aside className="fixed left-0 top-0 bottom-0 w-72 border-r border-border/40 bg-card p-6 flex flex-col hidden md:flex z-50">
-        <Link to="/" className="flex items-center mb-10 px-2">
-          <img src="/alyne-logo.svg" alt="Alyne" className="h-7" />
-        </Link>
-        <div className="flex-1 overflow-y-auto pr-2">
-            <div className="mb-8">
-                <div className="flex items-center gap-2 text-sm font-medium text-primary mb-2 bg-primary/10 px-3 py-1 rounded-full w-fit">
-                    {eventData?.event_type === 'days_of_week' ? 'Weekly' : 'Specific Dates'}
-                </div>
-                <h1 className="text-2xl font-bold tracking-tight leading-tight mb-2">{eventData?.title || 'Loading...'}</h1>
-                <p className="text-sm text-muted-foreground">{eventData?.description || 'No description provided.'}</p>
+    <div className="min-h-screen bg-muted/10 flex flex-col md:flex-row">
+      <Sidebar showNav={!!user}>
+        <div className="mb-8">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary mb-2 bg-primary/10 px-3 py-1 rounded-full w-fit">
+                {eventData?.event_type === 'days_of_week' ? 'Weekly' : 'Specific Dates'}
             </div>
+            <h1 className="text-2xl font-bold tracking-tight leading-tight mb-2">{eventData?.title || 'Loading...'}</h1>
+            <p className="text-sm text-muted-foreground">{eventData?.description || 'No description provided.'}</p>
+        </div>
 
-             <div className="space-y-3">
-                 <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Participants</h4>
-                    <span className="text-xs bg-muted px-2 py-0.5 rounded-full font-medium">{totalParticipants}</span>
-                 </div>
-                 <div className="space-y-1">
-                     {eventData?.participants?.map((p: any) => {
-                         const isHighlighted = highlightedNames.includes(p.name)
-                         return (
-                             <div
-                                key={p.id || p.name}
-                                className={`flex items-center gap-3 text-sm p-2 rounded-lg transition-all ${
-                                    isHighlighted ? 'bg-primary/10 text-primary font-medium translate-x-1' : 'text-muted-foreground hover:bg-muted/50'
-                                }`}
-                             >
-                                 <Avatar className={`h-8 w-8 border-2 ${isHighlighted ? 'border-primary' : 'border-background'}`}>
-                                     <AvatarFallback className="text-xs font-bold">{p.name?.charAt(0)}</AvatarFallback>
-                                 </Avatar>
-                                 <div className="flex flex-col leading-none">
-                                     <span className="truncate">{p.name} {p.name === name ? '(You)' : ''}</span>
-                                    {p.name === name && <span className="text-[10px] opacity-70 font-normal">Online</span>}
-                                 </div>
-                             </div>
-                         )
-                     })}
-                 </div>
-             </div>
-         </div>
-
-         {/* Current User Footer */}
-         <div className="border-t border-border pt-6 mt-2">
-             {user && (
-            <Link to="/dashboard" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground mb-4 transition-colors">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
-            </Link>
-             )}
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-border/50">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="relative">
-                        <div className="w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-background absolute right-0 bottom-0"></div>
-                        <Avatar className="h-9 w-9">
-                            <AvatarFallback>{name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                    </div>
-                    <div className="flex flex-col">
-                         <span className="text-sm font-semibold truncate">{name}</span>
-                         <span className="text-[10px] text-muted-foreground">Active now</span>
-                    </div>
-                </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => setIsSignedIn(false)} title="Log out">
-                     <span className="sr-only">Log out</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-                </Button>
+        <div className="space-y-3">
+            <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Participants</h4>
+                <span className="text-xs bg-muted px-2 py-0.5 rounded-full font-medium">{totalParticipants}</span>
             </div>
-         </div>
-      </aside>
+            <div className="space-y-1">
+                {eventData?.participants?.map((p: any) => {
+                    const isHighlighted = highlightedNames.includes(p.name)
+                    return (
+                        <div
+                            key={p.id || p.name}
+                            className={`flex items-center gap-3 text-sm p-2 rounded-lg transition-all ${
+                                isHighlighted ? 'bg-primary/10 text-primary font-medium translate-x-1' : 'text-muted-foreground hover:bg-muted/50'
+                            }`}
+                        >
+                            <Avatar className={`h-8 w-8 border-2 ${isHighlighted ? 'border-primary' : 'border-background'}`}>
+                                <AvatarFallback className="text-xs font-bold">{p.name?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col leading-none">
+                                <span className="truncate">{p.name} {p.name === name ? '(You)' : ''}</span>
+                                {p.name === name && <span className="text-[10px] opacity-70 font-normal">Online</span>}
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+      </Sidebar>
 
-      {/* Mobile Header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur-md px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center">
-             <img src="/alyne-logo.svg" alt="Alyne" className="h-7" />
-          </Link>
-          <div className="flex items-center gap-2">
-             <span className="text-sm font-bold bg-muted/50 px-3 py-1 rounded-full">{eventData?.title}</span>
-          </div>
-      </header>
-
-      <main className="md:ml-72 p-4 md:p-10 pt-20 md:pt-10 max-w-[1600px] mx-auto">
+      <main className="flex-1 md:ml-72 p-4 md:p-10 pt-20 md:pt-10 max-w-[1600px] mx-auto min-w-0">
         <div className="space-y-8 animate-in fade-in duration-500 delay-150">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-1">

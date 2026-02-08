@@ -70,19 +70,12 @@ export function CreateEventPage() {
       return
     }
 
-    const payload = {
-      title: eventName,
-      description: '',
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      event_type: mode === 'date' ? 'specific_dates' : 'days_of_week',
-      configuration: mode === 'date'
-        ? { dates: [] as string[] } // For now sending empty, will fix to send actual dates
-        : { days: Array.from(selectedDays) },
-      user_id: user?.id, // Link to authenticated user
-      team_id: searchParams.get('teamId') // Link to team if applicable
+    // Construct configuration
+    const configuration: any = {
+        startTime: earliestTime,
+        endTime: latestTime
     }
 
-    // Fix dates payload
     if (mode === 'date') {
        // We need to generate the array of date strings from the range
        const dates = []
@@ -94,7 +87,19 @@ export function CreateEventPage() {
               curr = addDays(curr, 1)
           }
        }
-       payload.configuration = { dates }
+       configuration.dates = dates
+    } else {
+        configuration.days = Array.from(selectedDays)
+    }
+
+    const payload = {
+      title: eventName,
+      description: '',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      event_type: mode === 'date' ? 'specific_dates' : 'days_of_week',
+      configuration,
+      user_id: user?.id, // Link to authenticated user
+      team_id: searchParams.get('teamId') // Link to team if applicable
     }
 
     try {

@@ -415,6 +415,8 @@ export function EventPage() {
                           columns={columns}
                           selectedSlots={selectedSlots}
                           onSlotToggle={handleSlotToggle}
+                          startTime={eventData?.configuration?.startTime || '09:00'}
+                          endTime={eventData?.configuration?.endTime || '17:00'}
                         />
                     </CardContent>
                 </Card>
@@ -438,12 +440,14 @@ export function EventPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 flex-1 relative bg-card">
-                         <HeatmapGrid
+                          <HeatmapGrid
                           columns={columns}
                           slotToNames={slotToNames}
                           totalParticipants={totalParticipants}
                           onHover={(slotId) => setHoveredSlot(slotId)}
                           hoveredParticipantSlots={hoveredParticipantSlots}
+                          startTime={eventData?.configuration?.startTime || '09:00'}
+                          endTime={eventData?.configuration?.endTime || '17:00'}
                         />
                     </CardContent>
                 </Card>
@@ -490,14 +494,27 @@ interface InteractiveGridProps {
   columns: { label: string; subLabel?: string }[]
   selectedSlots: Set<string>
   onSlotToggle: (slotId: string, forceState?: 'add' | 'remove') => void
+  startTime: string
+  endTime: string
 }
 
-function InteractiveGrid({ columns, selectedSlots, onSlotToggle }: InteractiveGridProps) {
+function InteractiveGrid({ columns, selectedSlots, onSlotToggle, startTime, endTime }: InteractiveGridProps) {
     const [isDragging, setIsDragging] = useState(false)
     const [dragMode, setDragMode] = useState<'add' | 'remove'>('add')
 
-    // 8 hours * 2 = 16 slots.
-    const rows = Array.from({ length: 16 })
+    // Parse start/end times
+    const [startH, startM] = startTime.split(':').map(Number)
+    const [endH, endM] = endTime.split(':').map(Number)
+
+    // We need startTotalMinutes for the loop later
+    const startTotalMinutes = startH * 60 + startM
+    const endTotalMinutes = endH * 60 + endM
+    const durationMinutes = endTotalMinutes - startTotalMinutes
+
+    // Calculate 30-min slots
+    const rowCount = Math.max(1, Math.ceil(durationMinutes / 30))
+
+    const rows = Array.from({ length: rowCount })
 
     const handleMouseDown = (slotId: string) => {
         setIsDragging(true)
@@ -545,10 +562,9 @@ function InteractiveGrid({ columns, selectedSlots, onSlotToggle }: InteractiveGr
                         {/* Rows */}
                         {rows.map((_, i) => {
                             // Time Logic
-                            const startHour = 9
-                            const totalMinutes = i * 30
-                            const hour = startHour + Math.floor(totalMinutes / 60)
-                            const minutes = totalMinutes % 60
+                            const currentSlotStartMinutes = startTotalMinutes + (i * 30)
+                            const hour = Math.floor(currentSlotStartMinutes / 60)
+                            const minutes = currentSlotStartMinutes % 60
                             const ampm = hour >= 12 ? 'PM' : 'AM'
                             const displayHour = hour > 12 ? hour - 12 : hour
 
@@ -597,15 +613,34 @@ function HeatmapGrid({
     slotToNames,
     totalParticipants,
     onHover,
-    hoveredParticipantSlots
+    hoveredParticipantSlots,
+    startTime,
+    endTime
 }: {
     columns: { label: string; subLabel?: string }[],
     slotToNames: Map<string, string[]>,
     totalParticipants: number,
     onHover: (slotId: string | null) => void,
-    hoveredParticipantSlots: Set<string> | null
+    hoveredParticipantSlots: Set<string> | null,
+    startTime: string,
+    endTime: string,
+
 }) {
-     const rows = Array.from({ length: 16 })
+    // Local state to track hover instantly
+    const [localHoveredSlot, setLocalHoveredSlot] = useState<string | null>(null)
+
+    // Parse start/end times
+    const [startH, startM] = startTime.split(':').map(Number)
+    const [endH, endM] = endTime.split(':').map(Number)
+
+    const startTotalMinutes = startH * 60 + startM
+    const endTotalMinutes = endH * 60 + endM
+    const durationMinutes = endTotalMinutes - startTotalMinutes
+
+    // Calculate 30-min slots
+    const rowCount = Math.max(1, Math.ceil(durationMinutes / 30))
+
+     const rows = Array.from({ length: rowCount })
 
      return (
         <div className="w-full overflow-hidden relative group" onMouseLeave={() => onHover(null)}>
@@ -630,10 +665,9 @@ function HeatmapGrid({
 
                         {/* Rows */}
                         {rows.map((_, i) => {
-                            const startHour = 9
-                            const totalMinutes = i * 30
-                            const hour = startHour + Math.floor(totalMinutes / 60)
-                            const minutes = totalMinutes % 60
+                            const currentSlotStartMinutes = startTotalMinutes + (i * 30)
+                            const hour = Math.floor(currentSlotStartMinutes / 60)
+                            const minutes = currentSlotStartMinutes % 60
                             const ampm = hour >= 12 ? 'PM' : 'AM'
                             const displayHour = hour > 12 ? hour - 12 : hour
 
@@ -662,7 +696,15 @@ function HeatmapGrid({
                                                 "bg-background h-8 relative group transition-all duration-200",
                                                 isHoveredParticipantSlot ? "z-20 ring-2 ring-primary ring-inset shadow-[0_0_15px_rgba(var(--primary),0.3)]" : ""
                                             )}
-                                            onMouseEnter={() => onHover(slotId)}
+                                            onMouseEnter={() => {
+                                                setLocalHoveredSlot(slotId)
+                                                onHover(slotId)
+                                            }}
+                                            onMouseLeave={() => {
+                                                setLocalHoveredSlot(null)
+                                                // We don't clear parent immediately to avoid flickering highlight, or do we?
+                                                // Actually, let's keep parent sync but manage tooltip locally for speed.
+                                            }}
                                         >
                                             {count > 0 && (
                                                 <div
@@ -674,8 +716,8 @@ function HeatmapGrid({
                                                 />
                                             )}
                                             {/* Tooltip on hover */}
-                                            {count > 0 && (
-                                                <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded mb-1 whitespace-nowrap z-50 pointer-events-none shadow-lg">
+                                            {count > 0 && localHoveredSlot === slotId && (
+                                                <div className="hidden md:block absolute bottom-full left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded mb-1 whitespace-nowrap z-50 pointer-events-none shadow-lg">
                                                     <div className="font-bold border-b border-gray-700 pb-1 mb-1">{count}/{totalParticipants} Available</div>
                                                     {names.map(n => <div key={n}>{n}</div>)}
                                                 </div>

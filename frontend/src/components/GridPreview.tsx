@@ -141,7 +141,7 @@ export function GridPreview() {
               {/* Rows */}
               {HOURS.map((hour, i) => (
                 <div key={hour} className="contents">
-                  <div className="bg-white/60 p-2 text-[10px] text-right text-slate-600 flex items-center justify-end font-medium">
+                  <div className="bg-white/60 min-w-[50px] p-2 text-[10px] text-right text-slate-600 flex items-center justify-end font-medium">
                     {hour}
                   </div>
                   {DAYS.map((_, j) => {

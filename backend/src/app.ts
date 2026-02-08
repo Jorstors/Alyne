@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-import { createClient } from '@supabase/supabase-js';
+// import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
@@ -16,13 +16,7 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 // Supabase Admin Client (for backend-exclusive operations)
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-// Only initialize if keys are present (avoids crashing on build)
-export const supabaseAdmin = (supabaseUrl && supabaseServiceKey)
-  ? createClient(supabaseUrl, supabaseServiceKey)
-  : null;
+import { supabaseAdmin } from './supabase';
 
 // Routes
 import eventsRouter from './routes/events';
@@ -37,7 +31,18 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/events', eventsRouter);
+app.use('/api/events', eventsRouter);
 app.use('/api/teams', teamsRouter);
+
+// Debug Route to check what URL Vercel is seeing
+app.all('*', (req, res) => {
+    res.status(404).json({
+        error: 'Route not found',
+        path: req.path,
+        originalUrl: req.originalUrl,
+        method: req.method
+    });
+});
 
 // Example: Admin route that client shouldn't do
 app.post('/api/admin/system-check', async (req, res) => {

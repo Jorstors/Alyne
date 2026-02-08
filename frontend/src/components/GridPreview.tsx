@@ -226,18 +226,41 @@ export function GridPreview() {
 
       {/* Feature highlights below grid - simplified */}
       <div className="lg:col-span-5 grid md:grid-cols-3 gap-6 mt-8">
-          <div className="flex flex-col items-center text-center p-2">
-              <h4 className="font-bold text-sm mb-1 text-slate-900">Instant Heatmap</h4>
-              <p className="text-[11px] text-slate-500">See exactly when everyone overlaps without guessing.</p>
-          </div>
-          <div className="flex flex-col items-center text-center p-2">
-              <h4 className="font-bold text-sm mb-1 text-slate-900">Drag to Paint</h4>
-              <p className="text-[11px] text-slate-500">Intuitive interaction that actually feels like coloring.</p>
-          </div>
-          <div className="flex flex-col items-center text-center p-2">
-              <h4 className="font-bold text-sm mb-1 text-slate-900">Anonymous Mode</h4>
-              <p className="text-[11px] text-slate-500">Quick events don't even require an account to join.</p>
-          </div>
+          <Card className="p-6 border-white/20 bg-white/60 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+              <div className="flex flex-col items-center text-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                      <Users className="h-5 w-5" />
+                  </div>
+                  <div>
+                      <h4 className="font-bold text-sm mb-1 text-slate-900">Instant Heatmap</h4>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">See exactly when everyone overlaps without guessing.</p>
+                  </div>
+              </div>
+          </Card>
+
+          <Card className="p-6 border-white/20 bg-white/60 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+              <div className="flex flex-col items-center text-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-600 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                      <MousePointer2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                      <h4 className="font-bold text-sm mb-1 text-slate-900">Drag to Paint</h4>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">Intuitive interaction that actually feels like coloring.</p>
+                  </div>
+              </div>
+          </Card>
+
+          <Card className="p-6 border-white/20 bg-white/60 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+              <div className="flex flex-col items-center text-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-600 group-hover:bg-green-500 group-hover:text-white transition-colors">
+                      <Check className="h-5 w-5" />
+                  </div>
+                  <div>
+                      <h4 className="font-bold text-sm mb-1 text-slate-900">Anonymous Mode</h4>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">Quick events don't even require an account to join.</p>
+                  </div>
+              </div>
+          </Card>
       </div>
     </div>
   )

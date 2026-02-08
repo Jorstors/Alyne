@@ -232,7 +232,7 @@ export function CreateEventPage() {
                     value={eventName}
                     onChange={(e) => setEventName(e.target.value)}
                     placeholder="New Event Name"
-                    className="text-4xl md:text-5xl font-bold text-center border-none shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/20 h-auto py-4 px-4 w-full bg-transparent break-words whitespace-normal tracking-tight transition-all"
+                    className="text-3xl md:text-4xl font-bold text-center border-none shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/20 h-auto py-2 px-4 w-full bg-transparent break-words whitespace-normal tracking-tight transition-all"
                     required
                     autoFocus
                   />
@@ -248,11 +248,11 @@ export function CreateEventPage() {
               {/* Left Column: Dates/Days */}
               <div className="flex flex-col gap-6 w-full h-full">
                 <div className="flex items-center gap-3">
-                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">1</div>
-                     <h3 className="text-xl font-semibold tracking-tight">When is it happening?</h3>
+                     <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">1</div>
+                     <h3 className="text-lg font-semibold tracking-tight">When is it happening?</h3>
                 </div>
 
-                <Card className="p-1 border shadow-lg shadow-black/5 bg-card/60 backdrop-blur-sm flex flex-col items-center flex-1 min-h-[420px] rounded-xl overflow-hidden ring-1 ring-black/5">
+                <Card className="p-1 border shadow-sm shadow-black/5 bg-card/60 backdrop-blur-sm flex flex-col items-center flex-1 min-h-[350px] rounded-xl overflow-hidden ring-1 ring-black/5">
                    <div className="w-full p-4 border-b bg-muted/30">
                      {/* Toggle Inside Card */}
                       <div className="flex bg-muted p-1 rounded-lg w-full max-w-sm mx-auto shadow-inner">
@@ -369,18 +369,18 @@ export function CreateEventPage() {
                      <h3 className="text-xl font-semibold tracking-tight">What times might work?</h3>
                 </div>
 
-                <Card className="p-8 border shadow-lg shadow-black/5 bg-card/60 backdrop-blur-sm space-y-8 flex flex-col justify-center flex-1 min-h-[420px] rounded-xl ring-1 ring-black/5 relative overflow-hidden">
+                <Card className="p-6 border shadow-sm shadow-black/5 bg-card/60 backdrop-blur-sm space-y-6 flex flex-col justify-center flex-1 min-h-[350px] rounded-xl ring-1 ring-black/5 relative overflow-hidden">
                    {/* Decorative background element */}
                    <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
 
                   <div className="space-y-6 relative z-10">
                       <div className="grid gap-2">
-                        <Label htmlFor="earliest" className="text-sm font-semibold text-muted-foreground uppercase tracking-wider pl-1">No earlier than</Label>
+                        <Label htmlFor="earliest" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">No earlier than</Label>
                         <Select
                           value={earliestTime}
                           onValueChange={setEarliestTime}
                         >
-                          <SelectTrigger id="earliest" className="h-14 text-lg px-4 rounded-xl border-muted-foreground/20 bg-background/50 hover:bg-background transition-colors focus:ring-primary/20">
+                          <SelectTrigger id="earliest" className="h-11 text-base px-3 rounded-lg border-muted-foreground/20 bg-background/50 hover:bg-background transition-colors focus:ring-primary/20">
                             <SelectValue placeholder="Select time" />
                           </SelectTrigger>
                           <SelectContent>
@@ -394,12 +394,12 @@ export function CreateEventPage() {
                       </div>
 
                       <div className="grid gap-2">
-                        <Label htmlFor="latest" className="text-sm font-semibold text-muted-foreground uppercase tracking-wider pl-1">No later than</Label>
+                        <Label htmlFor="latest" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">No later than</Label>
                         <Select
                           value={latestTime}
                           onValueChange={setLatestTime}
                         >
-                          <SelectTrigger id="latest" className="h-14 text-lg px-4 rounded-xl border-muted-foreground/20 bg-background/50 hover:bg-background transition-colors focus:ring-primary/20">
+                          <SelectTrigger id="latest" className="h-11 text-base px-3 rounded-lg border-muted-foreground/20 bg-background/50 hover:bg-background transition-colors focus:ring-primary/20">
                             <SelectValue placeholder="Select time" />
                           </SelectTrigger>
                           <SelectContent>
@@ -444,7 +444,7 @@ export function CreateEventPage() {
                         <Button
                             type="submit"
                             size="lg"
-                            className="h-12 px-8 text-base font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all rounded-full"
+                            className="h-11 px-6 text-sm font-semibold shadow-md shadow-primary/20 hover:shadow-primary/30 transition-all rounded-full"
                             disabled={
                                 !eventName ||
                                 (mode === 'date' && !dateRange?.from) ||

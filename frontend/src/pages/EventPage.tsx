@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Sidebar } from '@/components/Sidebar'
+import { cn } from '@/lib/utils'
 
 export function EventPage() {
   const { id } = useParams()
@@ -17,6 +18,7 @@ export function EventPage() {
   const [name, setName] = useState('')
   const [isSignedIn, setIsSignedIn] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
+  const [hoveredParticipantId, setHoveredParticipantId] = useState<string | null>(null)
 
   // Availability State
   const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set())
@@ -189,6 +191,17 @@ export function EventPage() {
     setTotalParticipants(amIParticipant ? participants.length : (name ? participants.length + 1 : participants.length))
   }, [participants, selectedSlots, name])
 
+  // Get slots for the currently hovered participant in the list
+  const hoveredParticipantSlots = useMemo(() => {
+    if (!hoveredParticipantId) return null
+    const p = participants.find((p: any) => (p.id || p.name) === hoveredParticipantId)
+    if (!p || !Array.isArray(p.availability)) return null
+    return new Set(p.availability as string[])
+  }, [hoveredParticipantId, participants])
+
+  // Get slots for "Me" (either from local state or server data if not editing)
+  // Actually, for "Me" highlight, we can just use selectedSlots
+
   // Polling for Real-time updates (every 3s)
   useEffect(() => {
       if (!id) return
@@ -343,14 +356,17 @@ export function EventPage() {
                 {participants.map((p: any) => {
                     const isHighlighted = highlightedNames.includes(p.name)
                     const me = isMe(p)
+                    const pid = p.id || p.name
                     return (
                         <div
-                            key={p.id || p.name}
-                            className={`flex items-center gap-3 text-sm p-2 rounded-lg transition-all ${
-                                isHighlighted ? 'bg-primary/10 text-primary font-medium translate-x-1' : 'text-muted-foreground hover:bg-muted/50'
+                            key={pid}
+                            onMouseEnter={() => setHoveredParticipantId(pid)}
+                            onMouseLeave={() => setHoveredParticipantId(null)}
+                            className={`flex items-center gap-3 text-sm p-2 rounded-lg transition-all cursor-pointer ${
+                                isHighlighted || (hoveredParticipantId === pid) ? 'bg-primary/10 text-primary font-medium translate-x-1' : 'text-muted-foreground hover:bg-muted/50'
                             }`}
                         >
-                            <Avatar className={`h-8 w-8 border-2 ${isHighlighted ? 'border-primary' : 'border-background'}`}>
+                            <Avatar className={`h-8 w-8 border-2 ${isHighlighted || (hoveredParticipantId === pid) ? 'border-primary' : 'border-background'}`}>
                                 <AvatarFallback className="text-xs font-bold">{p.name?.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="flex flex-col leading-none">
@@ -435,6 +451,7 @@ export function EventPage() {
                           slotToNames={slotToNames}
                           totalParticipants={totalParticipants}
                           onHover={(slotId) => setHoveredSlot(slotId)}
+                          hoveredParticipantSlots={hoveredParticipantSlots}
                         />
                     </CardContent>
                 </Card>
@@ -450,12 +467,18 @@ export function EventPage() {
                         {participants.map((p: any) => {
                              const isHighlighted = highlightedNames.includes(p.name)
                              const me = isMe(p)
+                             const pid = p.id || p.name
                              return (
-                             <div key={p.id || p.name} className={`flex items-center gap-3 p-3 rounded-lg border ${isHighlighted ? 'bg-primary/5 border-primary/20' : 'border-transparent bg-muted/30'}`}>
+                             <div
+                                key={pid}
+                                onMouseEnter={() => setHoveredParticipantId(pid)}
+                                onMouseLeave={() => setHoveredParticipantId(null)}
+                                className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${isHighlighted || hoveredParticipantId === pid ? 'bg-primary/5 border-primary/20 scale-[1.02]' : 'border-transparent bg-muted/30'}`}
+                             >
                                  <Avatar className="h-8 w-8">
                                      <AvatarFallback>{p.name?.charAt(0)}</AvatarFallback>
                                  </Avatar>
-                                 <span className={`text-sm font-medium ${isHighlighted ? 'text-primary' : ''}`}>
+                                 <span className={`text-sm font-medium ${isHighlighted || hoveredParticipantId === pid ? 'text-primary' : ''}`}>
                                      {p.name} {me ? '(You)' : ''}
                                  </span>
                              </div>
@@ -557,12 +580,14 @@ function HeatmapGrid({
     columns,
     slotToNames,
     totalParticipants,
-    onHover
+    onHover,
+    hoveredParticipantSlots
 }: {
     columns: { label: string; subLabel?: string }[],
     slotToNames: Map<string, string[]>,
     totalParticipants: number,
-    onHover: (slotId: string | null) => void
+    onHover: (slotId: string | null) => void,
+    hoveredParticipantSlots: Set<string> | null
 }) {
      const rows = Array.from({ length: 9 })
 
@@ -596,17 +621,24 @@ function HeatmapGrid({
                                 const count = names.length
                                 // Opacity = count / max(1, total)
                                 const opacity = totalParticipants > 0 ? (count / totalParticipants) : 0
+                                const isHoveredParticipantSlot = hoveredParticipantSlots?.has(slotId)
 
                                 return (
                                 <div
                                     key={`${i}-${j}`}
-                                    className="bg-background h-10 relative group"
+                                    className={cn(
+                                        "bg-background h-10 relative group transition-all duration-200",
+                                        isHoveredParticipantSlot ? "z-20 ring-2 ring-primary ring-inset shadow-[0_0_15px_rgba(var(--primary),0.3)]" : ""
+                                    )}
                                     onMouseEnter={() => onHover(slotId)}
                                 >
                                     {count > 0 && (
                                         <div
-                                            className="absolute inset-0 bg-green-500 transition-all duration-500"
-                                            style={{ opacity: Math.max(0.1, opacity) }} // Min 0.1 so even single votes are visible
+                                            className={cn(
+                                                "absolute inset-0 bg-green-500 transition-all duration-500",
+                                                isHoveredParticipantSlot ? "opacity-90" : ""
+                                            )}
+                                            style={!isHoveredParticipantSlot ? { opacity: Math.max(0.1, opacity) } : {}} // Override opacity if hovered
                                         />
                                     )}
                                     {/* Tooltip on hover */}

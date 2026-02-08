@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Calendar, Users, Clock, ArrowRight, MoreHorizontal, Loader2 } from 'lucide-react'
+import { Calendar, Users, Clock, ArrowRight, MoreHorizontal } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import { useAuth } from '@/components/AuthProvider'

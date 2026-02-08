@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { Loader2, Copy, Check, Users, ArrowLeft } from 'lucide-react'
@@ -48,11 +48,38 @@ export function EventPage() {
   // Hydration State
   const [hasLoaded, setHasLoaded] = useState(false)
 
+  const isMe = useCallback((p: any) => {
+      if (user?.id && p.user_id) return p.user_id === user.id
+      if (!p.user_id) return p.name === name
+      return false
+  }, [user?.id, name])
+
+  // Deduped participants list
+  const participants = useMemo(() => {
+    return (eventData?.participants || []).reduce((acc: any[], p: any) => {
+        // Check if we already have this participant
+        const existingIdx = acc.findIndex(item => (item.user_id && item.user_id === p.user_id) || (!item.user_id && !p.user_id && item.name === p.name))
+
+        if (existingIdx === -1) {
+            acc.push(p)
+        } else {
+            const current = acc[existingIdx]
+            const pTime = p.updated_at ? new Date(p.updated_at).getTime() : 0
+            const cTime = current.updated_at ? new Date(current.updated_at).getTime() : 0
+            // Keep the one with availability or more recent
+            if (pTime > cTime || (!current.availability && p.availability)) {
+                acc[existingIdx] = p
+            }
+        }
+        return acc
+    }, [])
+  }, [eventData?.participants])
+
   // Hydrate existing availability on load
   useEffect(() => {
-    if (hasLoaded || !eventData?.participants || !name) return
+    if (hasLoaded || participants.length === 0 || !name) return
 
-    const myRecord = eventData.participants.find((p: any) => p.name === name)
+    const myRecord = participants.find(isMe)
     if (myRecord) {
         if (Array.isArray(myRecord.availability)) {
             setSelectedSlots(new Set(myRecord.availability))
@@ -60,7 +87,7 @@ export function EventPage() {
     }
     // Mark as loaded even if no record found, to prevent future polling from wiping new edits
     setHasLoaded(true)
-  }, [eventData, name, hasLoaded])
+  }, [participants, name, hasLoaded])
 
   // Columns State
   const [columns, setColumns] = useState<{ label: string; subLabel?: string }[]>([])
@@ -132,15 +159,12 @@ export function EventPage() {
 
   // Re-calculate group heatmap whenever eventData OR local state changes
   useEffect(() => {
-    if (!eventData?.participants) return
-
     const mapping = new Map<string, string[]>()
-    const participants = eventData.participants || []
-    const amIParticipant = participants.some((p: any) => p.name === name)
+    const amIParticipant = participants.some(isMe)
 
     // 1. Process all participants except myself
     participants.forEach((p: any) => {
-        if (p.name === name) return // Skip server data for myself
+        if (isMe(p)) return // Skip server data for myself
 
         if (Array.isArray(p.availability)) {
             p.availability.forEach((slot: string) => {
@@ -161,9 +185,9 @@ export function EventPage() {
     }
 
     setSlotToNames(mapping)
-    // Total is server count + 1 if I'm new, or just server count if I'm already in list
+    // Total is participants count + 1 if I'm new, or just count if I'm already in list
     setTotalParticipants(amIParticipant ? participants.length : (name ? participants.length + 1 : participants.length))
-  }, [eventData, selectedSlots, name])
+  }, [participants, selectedSlots, name])
 
   // Polling for Real-time updates (every 3s)
   useEffect(() => {
@@ -316,8 +340,9 @@ export function EventPage() {
                 <span className="text-xs bg-muted px-2 py-0.5 rounded-full font-medium">{totalParticipants}</span>
             </div>
             <div className="space-y-1">
-                {eventData?.participants?.map((p: any) => {
+                {participants.map((p: any) => {
                     const isHighlighted = highlightedNames.includes(p.name)
+                    const me = isMe(p)
                     return (
                         <div
                             key={p.id || p.name}
@@ -329,8 +354,8 @@ export function EventPage() {
                                 <AvatarFallback className="text-xs font-bold">{p.name?.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="flex flex-col leading-none">
-                                <span className="truncate">{p.name} {p.name === name ? '(You)' : ''}</span>
-                                {p.name === name && <span className="text-[10px] opacity-70 font-normal">Online</span>}
+                                <span className="truncate">{p.name} {me ? '(You)' : ''}</span>
+                                {me && <span className="text-[10px] opacity-70 font-normal">Online</span>}
                             </div>
                         </div>
                     )
@@ -422,15 +447,16 @@ export function EventPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-2">
-                        {eventData?.participants?.map((p: any) => {
+                        {participants.map((p: any) => {
                              const isHighlighted = highlightedNames.includes(p.name)
+                             const me = isMe(p)
                              return (
                              <div key={p.id || p.name} className={`flex items-center gap-3 p-3 rounded-lg border ${isHighlighted ? 'bg-primary/5 border-primary/20' : 'border-transparent bg-muted/30'}`}>
                                  <Avatar className="h-8 w-8">
                                      <AvatarFallback>{p.name?.charAt(0)}</AvatarFallback>
                                  </Avatar>
                                  <span className={`text-sm font-medium ${isHighlighted ? 'text-primary' : ''}`}>
-                                     {p.name} {p.name === name ? '(You)' : ''}
+                                     {p.name} {me ? '(You)' : ''}
                                  </span>
                              </div>
                             )

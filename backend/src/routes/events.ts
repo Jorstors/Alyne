@@ -148,35 +148,48 @@ router.post('/:id/participate', async (req, res) => {
   }
 
   try {
-    // Check for existing participant using multiple strategies
     let existingId: string | null = null;
-
+    // 1. Identify existing participant to update
     if (user_id) {
-       const { data } = await supabaseAdmin
+       // Match by user_id first
+       const { data: byId } = await supabaseAdmin
         .from('participants')
         .select('id')
         .eq('event_id', id)
         .eq('user_id', user_id)
         .limit(1);
-       if (data && data.length > 0) existingId = data[0].id;
+
+       if (byId && byId.length > 0) {
+           existingId = byId[0].id;
+       } else {
+           // Fallback: Check if there's an anonymous record with this name to "claim"
+           const { data: byName } = await supabaseAdmin
+            .from('participants')
+            .select('id')
+            .eq('event_id', id)
+            .eq('name', name)
+            .is('user_id', null)
+            .limit(1);
+           if (byName && byName.length > 0) existingId = byName[0].id;
+       }
     } else if (email) {
-       const { data } = await supabaseAdmin
+       const { data: byEmail } = await supabaseAdmin
         .from('participants')
         .select('id')
         .eq('event_id', id)
         .eq('email', email)
         .limit(1);
-       if (data && data.length > 0) existingId = data[0].id;
+       if (byEmail && byEmail.length > 0) existingId = byEmail[0].id;
     } else {
-       // Only match by name if we don't have better identifiers
-       const { data } = await supabaseAdmin
+       // Anonymous guest matching by name
+       const { data: byNameOnly } = await supabaseAdmin
         .from('participants')
         .select('id')
         .eq('event_id', id)
         .eq('name', name)
         .is('user_id', null)
         .limit(1);
-       if (data && data.length > 0) existingId = data[0].id;
+       if (byNameOnly && byNameOnly.length > 0) existingId = byNameOnly[0].id;
     }
 
     let result;
@@ -184,7 +197,12 @@ router.post('/:id/participate', async (req, res) => {
         // Update
         result = await supabaseAdmin
             .from('participants')
-            .update({ availability, name, email })
+            .update({
+                availability,
+                name,
+                email: email || null,
+                user_id: user_id || null // This allows "claiming" if it was null
+            })
             .eq('id', existingId)
             .select()
             .single();

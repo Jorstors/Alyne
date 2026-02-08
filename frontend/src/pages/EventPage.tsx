@@ -260,10 +260,6 @@ export function EventPage() {
   if (!isSignedIn) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
-          {/* Background Decorative */}
-          <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-          <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative w-full max-w-md animate-in fade-in zoom-in duration-500">
               <div className="text-center mb-8">
@@ -272,10 +268,10 @@ export function EventPage() {
                   </Link>
               </div>
 
-            <Card className="shadow-2xl bg-card border-none ring-0">
+            <Card className="shadow-lg max-w-md w-full">
             <CardHeader className="text-center pb-2">
-                <CardTitle className="text-3xl font-extrabold tracking-tight">{eventData?.title || 'Join Event'}</CardTitle>
-                <CardDescription className="text-base font-medium mt-1">
+                <CardTitle className="text-2xl font-bold tracking-tight">{eventData?.title || 'Join Event'}</CardTitle>
+                <CardDescription className="text-sm mt-1">
                   {eventData?.description || 'Join the event to share your availability.'}
                 </CardDescription>
             </CardHeader>
@@ -283,17 +279,17 @@ export function EventPage() {
                 {/* Primary Guest Entry */}
                 <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name" className="text-sm font-semibold text-foreground/70 ml-1">Display Name</Label>
+                        <Label htmlFor="name" className="text-sm font-semibold">Display Name</Label>
                         <Input
                             id="name"
                             placeholder="How should we call you?"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             autoFocus
-                            className="h-12 text-lg bg-background/50 border-white/20 focus:ring-primary/20 transition-all"
+                            className="h-10"
                         />
                     </div>
-                    <Button type="submit" size="lg" className="w-full h-12 text-base font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all rounded-xl" disabled={!name.trim()}>
+                    <Button type="submit" size="lg" className="w-full h-10 font-medium" disabled={!name.trim()}>
                         Enter Event
                         <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
                     </Button>
@@ -330,7 +326,7 @@ export function EventPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/10 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-background flex flex-col md:flex-row relative">
       <Sidebar showNav={!!user}>
         <div className="mb-8">
             <div className="flex items-center gap-2 text-sm font-medium text-primary mb-2 bg-primary/10 px-3 py-1 rounded-full w-fit">
@@ -380,9 +376,9 @@ export function EventPage() {
                 <div>
                      <div className="flex items-center gap-2 text-primary font-medium mb-1">
                         <Check className="h-4 w-4" />
-                        <span>Ready to vote</span>
+                        <span className="text-sm font-semibold">Ready to vote</span>
                      </div>
-                    <h2 className="text-3xl font-bold tracking-tight">Cast your vote</h2>
+                    <h2 className="text-3xl font-bold tracking-tight text-foreground">Cast your vote</h2>
                     <p className="text-muted-foreground mt-1">Paint over the times you are available. Changes are saved automatically.</p>
                 </div>
                 <Button variant="outline" size="lg" onClick={copyLink} className="gap-2 rounded-full hover:bg-muted shadow-sm">
@@ -392,9 +388,9 @@ export function EventPage() {
             </div>
 
             {/* Split View */}
-            <div className="grid xl:grid-cols-2 gap-8">
+            <div className="grid xl:grid-cols-2 gap-8 relative z-10">
                 {/* My Availability */}
-                <Card className="shadow-sm border bg-card/50 flex flex-col h-[700px]">
+                <Card className="shadow-sm border bg-card flex flex-col h-[700px] overflow-hidden">
                     <CardHeader className="pb-4 border-b">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -421,7 +417,7 @@ export function EventPage() {
                 </Card>
 
                 {/* Group Availability */}
-                <Card className="shadow-sm border bg-card/50 flex flex-col h-[700px]">
+                <Card className="shadow-sm border bg-card flex flex-col h-[700px] overflow-hidden">
                      <CardHeader className="pb-4 border-b">
                         <div className="flex items-center justify-between">
                              <div className="flex items-center gap-3">

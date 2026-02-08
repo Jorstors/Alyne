@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Calendar, Search, Clock, MoreHorizontal, Loader2, Plus } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
@@ -58,7 +59,28 @@ export function EventsPage() {
   // Real implementation: check e.end_date or configuration dates
 
   if (loading) {
-      return <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+      return (
+        <div className="space-y-8">
+           <div className="flex justify-between items-start">
+               <div className="space-y-2">
+                   <Skeleton className="h-8 w-32" />
+                   <Skeleton className="h-4 w-48" />
+               </div>
+               <Skeleton className="h-10 w-32 rounded-md" />
+           </div>
+
+           <Skeleton className="h-10 w-full rounded-md" />
+
+           <div className="space-y-2">
+               <Skeleton className="h-10 w-64 rounded-md" />
+           </div>
+
+           <div className="space-y-8">
+               <Skeleton className="h-40 w-full rounded-xl" />
+               <Skeleton className="h-40 w-full rounded-xl" />
+           </div>
+        </div>
+      )
   }
 
   return (
@@ -96,7 +118,7 @@ export function EventsPage() {
           <TabsTrigger value="past">Past</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-4">
+        <TabsContent value="all" className="space-y-8 relative z-10">
              {filteredEvents.length === 0 ? (
                 <EmptyState />
              ) : (
@@ -106,7 +128,7 @@ export function EventsPage() {
              )}
         </TabsContent>
 
-        <TabsContent value="upcoming" className="space-y-4">
+        <TabsContent value="upcoming" className="space-y-8 relative z-10">
              {filteredEvents.length === 0 ? (
                 <EmptyState />
              ) : (

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Users, Plus, Search, MoreHorizontal, Settings, Loader2 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
@@ -36,7 +37,25 @@ export function TeamsPage() {
   }, [user?.id])
 
   if (loading) {
-      return <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+      return (
+        <div className="space-y-8">
+           <div className="flex justify-between items-start">
+               <div className="space-y-2">
+                   <Skeleton className="h-8 w-32" />
+                   <Skeleton className="h-4 w-48" />
+               </div>
+               <Skeleton className="h-10 w-28 rounded-md" />
+           </div>
+
+           <Skeleton className="h-10 w-full rounded-md" />
+
+           <div className="grid gap-8">
+               <Skeleton className="h-32 w-full rounded-xl" />
+               <Skeleton className="h-32 w-full rounded-xl" />
+               <Skeleton className="h-32 w-full rounded-xl" />
+           </div>
+        </div>
+      )
   }
 
   return (
@@ -63,7 +82,7 @@ export function TeamsPage() {
       </div>
 
       {/* Teams Grid */}
-      <div className="grid gap-4">
+      <div className="grid gap-8 relative z-10">
         {teams.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg bg-muted/20">
                 <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />

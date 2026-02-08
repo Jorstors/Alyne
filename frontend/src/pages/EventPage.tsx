@@ -523,47 +523,58 @@ function InteractiveGrid({ columns, selectedSlots, onSlotToggle }: InteractiveGr
     }, [])
 
     return (
-        <div className="min-w-[400px] p-4 select-none">
-             <div
-                className="grid gap-px bg-border border border-border"
-                style={{ gridTemplateColumns: `60px repeat(${columns.length}, 1fr)` }}
-             >
-                {/* Header */}
-                <div className="bg-background"></div>
-                {columns.map((col, i) => (
-                    <div key={`${col.label}-${i}`} className="bg-background p-2 text-center text-sm font-medium">
-                        {col.label}
-                        {col.subLabel && <div className="text-xs text-muted-foreground">{col.subLabel}</div>}
-                    </div>
-                ))}
+        <div className="w-full overflow-hidden relative group">
+             {/* Scroll Indicators */}
+             <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none md:hidden" />
+             <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none md:hidden" />
 
-                {/* Rows */}
-                {rows.map((_, i) => {
-                    const hour = 9 + i
-                    const time = `${hour > 12 ? hour - 12 : hour} ${hour >= 12 ? 'PM' : 'AM'}`
-                    return (
-                        <div key={i} className="contents">
-                            <div className="bg-background p-2 text-xs text-right text-muted-foreground -mt-2.5">
-                                {time}
+             <div className="overflow-x-auto pb-4 -mb-4 scrollbar-hide">
+                 <div className="min-w-[400px] p-4 select-none">
+                     <div
+                        className="grid gap-px bg-border border border-border"
+                        style={{ gridTemplateColumns: `60px repeat(${columns.length}, 1fr)` }}
+                     >
+                        {/* Header */}
+                        <div className="bg-background sticky left-0 z-20"></div>
+                        {columns.map((col, i) => (
+                            <div key={`${col.label}-${i}`} className="bg-background p-2 text-center text-sm font-medium">
+                                {col.label}
+                                {col.subLabel && <div className="text-xs text-muted-foreground">{col.subLabel}</div>}
                             </div>
-                            {columns.map((_, j) => {
-                                const slotId = `${i}-${j}`
-                                const isSelected = selectedSlots.has(slotId)
-                                return (
-                                    <div
-                                        key={slotId}
-                                        onMouseDown={() => handleMouseDown(slotId)}
-                                        onMouseEnter={() => handleMouseEnter(slotId)}
-                                        className={`bg-background h-10 cursor-pointer transition-colors relative group border-t border-dashed border-gray-100 ${
-                                            isSelected ? 'bg-green-500 hover:bg-green-600' : 'hover:bg-green-100'
-                                        }`}
-                                    >
+                        ))}
+
+                        {/* Rows */}
+                        {rows.map((_, i) => {
+                            const hour = 9 + i
+                            const time = `${hour > 12 ? hour - 12 : hour} ${hour >= 12 ? 'PM' : 'AM'}`
+                            return (
+                                <div key={i} className="contents">
+                                    <div className="bg-background p-2 text-xs text-right text-muted-foreground -mt-2.5 sticky left-0 z-10">
+                                        {time}
                                     </div>
-                                )
-                            })}
-                        </div>
-                    )
-                })}
+                                    {columns.map((_, j) => {
+                                        const slotId = `${i}-${j}`
+                                        const isSelected = selectedSlots.has(slotId)
+                                        return (
+                                            <div
+                                                key={slotId}
+                                                onMouseDown={() => handleMouseDown(slotId)}
+                                                onMouseEnter={() => handleMouseEnter(slotId)}
+                                                className={`bg-background h-10 cursor-pointer transition-colors relative group border-t border-dashed border-gray-100 ${
+                                                    isSelected ? 'bg-green-500 hover:bg-green-600' : 'hover:bg-green-100'
+                                                }`}
+                                            >
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )
+                        })}
+                     </div>
+                 </div>
+             </div>
+             <div className="md:hidden text-center text-xs text-muted-foreground mt-2 animate-pulse">
+                Swipe to see more times &rarr;
              </div>
         </div>
     )
@@ -585,67 +596,78 @@ function HeatmapGrid({
      const rows = Array.from({ length: 9 })
 
      return (
-        <div className="min-w-[400px] p-4" onMouseLeave={() => onHover(null)}>
-             <div
-                className="grid gap-px bg-border border border-border"
-                style={{ gridTemplateColumns: `60px repeat(${columns.length}, 1fr)` }}
-             >
-                {/* Header */}
-                <div className="bg-background"></div>
-                {columns.map((col, i) => (
-                    <div key={`${col.label}-${i}`} className="bg-background p-2 text-center text-sm font-medium">
-                        {col.label}
-                        {col.subLabel && <div className="text-xs text-muted-foreground">{col.subLabel}</div>}
-                    </div>
-                ))}
+        <div className="w-full overflow-hidden relative group" onMouseLeave={() => onHover(null)}>
+             {/* Scroll Indicators */}
+             <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none md:hidden" />
+             <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none md:hidden" />
 
-                {/* Rows */}
-                {rows.map((_, i) => {
-                    const hour = 9 + i
-                    const time = `${hour > 12 ? hour - 12 : hour} ${hour >= 12 ? 'PM' : 'AM'}`
-                    return (
-                        <div key={i} className="contents">
-                            <div className="bg-background p-2 text-xs text-right text-muted-foreground -mt-2.5">
-                                {time}
+             <div className="overflow-x-auto pb-4 -mb-4 scrollbar-hide">
+                 <div className="min-w-[400px] p-4">
+                     <div
+                        className="grid gap-px bg-border border border-border"
+                        style={{ gridTemplateColumns: `60px repeat(${columns.length}, 1fr)` }}
+                     >
+                        {/* Header */}
+                        <div className="bg-background sticky left-0 z-20"></div>
+                        {columns.map((col, i) => (
+                            <div key={`${col.label}-${i}`} className="bg-background p-2 text-center text-sm font-medium">
+                                {col.label}
+                                {col.subLabel && <div className="text-xs text-muted-foreground">{col.subLabel}</div>}
                             </div>
-                            {columns.map((_, j) => {
-                                const slotId = `${i}-${j}`
-                                const names = slotToNames.get(slotId) || []
-                                const count = names.length
-                                // Opacity = count / max(1, total)
-                                const opacity = totalParticipants > 0 ? (count / totalParticipants) : 0
-                                const isHoveredParticipantSlot = hoveredParticipantSlots?.has(slotId)
+                        ))}
 
-                                return (
-                                <div
-                                    key={`${i}-${j}`}
-                                    className={cn(
-                                        "bg-background h-10 relative group transition-all duration-200",
-                                        isHoveredParticipantSlot ? "z-20 ring-2 ring-primary ring-inset shadow-[0_0_15px_rgba(var(--primary),0.3)]" : ""
-                                    )}
-                                    onMouseEnter={() => onHover(slotId)}
-                                >
-                                    {count > 0 && (
+                        {/* Rows */}
+                        {rows.map((_, i) => {
+                            const hour = 9 + i
+                            const time = `${hour > 12 ? hour - 12 : hour} ${hour >= 12 ? 'PM' : 'AM'}`
+                            return (
+                                <div key={i} className="contents">
+                                    <div className="bg-background p-2 text-xs text-right text-muted-foreground -mt-2.5 sticky left-0 z-10">
+                                        {time}
+                                    </div>
+                                    {columns.map((_, j) => {
+                                        const slotId = `${i}-${j}`
+                                        const names = slotToNames.get(slotId) || []
+                                        const count = names.length
+                                        // Opacity = count / max(1, total)
+                                        const opacity = totalParticipants > 0 ? (count / totalParticipants) : 0
+                                        const isHoveredParticipantSlot = hoveredParticipantSlots?.has(slotId)
+
+                                        return (
                                         <div
+                                            key={`${i}-${j}`}
                                             className={cn(
-                                                "absolute inset-0 bg-green-500 transition-all duration-500",
-                                                isHoveredParticipantSlot ? "opacity-90" : ""
+                                                "bg-background h-10 relative group transition-all duration-200",
+                                                isHoveredParticipantSlot ? "z-20 ring-2 ring-primary ring-inset shadow-[0_0_15px_rgba(var(--primary),0.3)]" : ""
                                             )}
-                                            style={!isHoveredParticipantSlot ? { opacity: Math.max(0.1, opacity) } : {}} // Override opacity if hovered
-                                        />
-                                    )}
-                                    {/* Tooltip on hover */}
-                                    {count > 0 && (
-                                        <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded mb-1 whitespace-nowrap z-50 pointer-events-none shadow-lg">
-                                            <div className="font-bold border-b border-gray-700 pb-1 mb-1">{count}/{totalParticipants} Available</div>
-                                            {names.map(n => <div key={n}>{n}</div>)}
+                                            onMouseEnter={() => onHover(slotId)}
+                                        >
+                                            {count > 0 && (
+                                                <div
+                                                    className={cn(
+                                                        "absolute inset-0 bg-green-500 transition-all duration-500",
+                                                        isHoveredParticipantSlot ? "opacity-90" : ""
+                                                    )}
+                                                    style={!isHoveredParticipantSlot ? { opacity: Math.max(0.1, opacity) } : {}} // Override opacity if hovered
+                                                />
+                                            )}
+                                            {/* Tooltip on hover */}
+                                            {count > 0 && (
+                                                <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded mb-1 whitespace-nowrap z-50 pointer-events-none shadow-lg">
+                                                    <div className="font-bold border-b border-gray-700 pb-1 mb-1">{count}/{totalParticipants} Available</div>
+                                                    {names.map(n => <div key={n}>{n}</div>)}
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
+                                    )})}
                                 </div>
-                            )})}
-                        </div>
-                    )
-                })}
+                            )
+                        })}
+                     </div>
+                 </div>
+             </div>
+             <div className="md:hidden text-center text-xs text-muted-foreground mt-2 animate-pulse">
+                Swipe to see more times &rarr;
              </div>
         </div>
     )

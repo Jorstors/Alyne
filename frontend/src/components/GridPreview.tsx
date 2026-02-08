@@ -11,7 +11,7 @@ const PARTICIPANTS = [
   { name: 'Taylor', color: 'bg-orange-500' },
 ]
 
-const DAYS = ['Mon', 'Tue', 'Wed']
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
 const HOURS = ['9 AM', '10 AM', '11 AM', '12 PM', '1 PM']
 
 export function GridPreview() {
@@ -127,13 +127,18 @@ export function GridPreview() {
         <CardContent className="p-0 flex-1 bg-white/20">
           <div className="p-2 sm:p-6">
             <div
-              className="grid gap-px bg-slate-200/50 border border-slate-200/50 rounded-lg overflow-hidden"
-              style={{ gridTemplateColumns: `45px repeat(${DAYS.length}, 1fr)` }}
+              className="grid gap-px bg-slate-200/50 border border-slate-200/50 rounded-lg grid-cols-[45px_repeat(3,1fr)] lg:grid-cols-[45px_repeat(5,1fr)] relative"
             >
               {/* Header */}
-              <div className="bg-white/70"></div>
+              <div className="bg-white/70 rounded-tl-lg"></div>
               {DAYS.map(day => (
-                <div key={day} className="bg-white/70 p-2 sm:p-4 text-center text-[10px] sm:text-xs font-bold text-slate-900 flex items-center justify-center">
+                <div key={day} className={cn(
+                  "bg-white/70 p-2 sm:p-4 text-center text-[10px] sm:text-xs font-bold text-slate-900 flex items-center justify-center",
+                  (day === 'Thu' || day === 'Fri') && "hidden lg:flex",
+                  // Round top-right corner based on visibility
+                  day === 'Wed' && "lg:rounded-none rounded-tr-lg",
+                  day === 'Fri' && "rounded-tr-lg"
+                )}>
                   {day}
                 </div>
               ))}
@@ -141,10 +146,13 @@ export function GridPreview() {
               {/* Rows */}
               {HOURS.map((hour, i) => (
                 <div key={hour} className="contents">
-                  <div className="bg-white/60 min-w-[50px] p-2 text-[10px] text-right text-slate-600 flex items-center justify-end font-medium">
+                  <div className={cn(
+                    "bg-white/60 min-w-[50px] p-2 text-[10px] text-right text-slate-600 flex items-center justify-end font-medium",
+                    i === HOURS.length - 1 && "rounded-bl-lg"
+                  )}>
                     {hour}
                   </div>
-                  {DAYS.map((_, j) => {
+                  {DAYS.map((day, j) => {
                     const slotId = `${i}-${j}`
                     const isSelected = selectedSlots.has(slotId)
                     const details = getSlotDetails(slotId)
@@ -162,7 +170,11 @@ export function GridPreview() {
                         className={cn(
                           "bg-white h-16 cursor-pointer transition-all relative group border-t border-dashed border-slate-100",
                           "hover:ring-2 hover:ring-primary/20 hover:z-10",
-                          isSelected && "bg-primary/20"
+                          isSelected && "bg-primary/20",
+                          (day === 'Thu' || day === 'Fri') && "hidden lg:block",
+                          // Round bottom-right corner
+                          i === HOURS.length - 1 && day === 'Wed' && "lg:rounded-none rounded-br-lg",
+                          i === HOURS.length - 1 && day === 'Fri' && "rounded-br-lg"
                         )}
                       >
                         {totalCount > 0 && (

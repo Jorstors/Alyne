@@ -118,7 +118,7 @@ export function LandingPage() {
         {/* Product Preview */}
         <div className="mt-20 md:mt-32 relative mx-auto max-w-7xl px-6">
             <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent pointer-events-none z-10 h-20 bottom-0" />
-            <div className="relative">
+            <div className="relative z-20 py-10">
                 <GridPreview />
             </div>
         </div>

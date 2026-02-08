@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
@@ -12,6 +12,15 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState<string | null>(null)
+  const [searchParams] = useSearchParams()
+  const location = useLocation()
+
+  // Determine where to redirect after login
+  // 1. Check for ?redirect= query param
+  // 2. Check for state.from (from AuthenticatedLayout)
+  // 3. Default to /dashboard
+  const redirectPath = searchParams.get('redirect') || location.state?.from || '/dashboard'
+  const finalRedirectUrl = `${window.location.origin}${redirectPath}`
 
   const handleOAuthLogin = async (provider: 'google' | 'github') => {
     try {
@@ -19,7 +28,7 @@ export function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: finalRedirectUrl
         }
       })
       if (error) throw error
@@ -38,7 +47,7 @@ export function LoginPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`
+          emailRedirectTo: finalRedirectUrl
         }
       })
       if (error) throw error
@@ -57,8 +66,7 @@ export function LoginPage() {
           <Link to="/" className="inline-flex items-center justify-center mb-4">
             <img src="/alyne-logo.svg" alt="Alyne" className="h-8" />
           </Link>
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
-          <CardDescription>Sign in to continue to Alyne</CardDescription>
+          <CardTitle className="text-2xl">Sign In or Create an Account</CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -111,18 +119,18 @@ export function LoginPage() {
               <Separator className="w-full" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-card px-2 text-muted-foreground">Or email login link</span>
             </div>
           </div>
 
           {/* Email Login */}
           <form className="space-y-4" onSubmit={handleEmailLogin}>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email address</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="you@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -137,16 +145,16 @@ export function LoginPage() {
 
             <Button className="w-full" size="lg" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign in with Email
+              Send Login link
             </Button>
           </form>
 
-          <p className="text-center text-sm text-muted-foreground">
-            Don't have an account?{' '}
-            <Link to="/login" className="text-primary hover:underline font-medium">
-              Sign up
-            </Link>
-          </p>
+          <div className="bg-muted/30 p-4 rounded-xl space-y-2 border border-border/50">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">How it works</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                  If you already have an account, we'll sign you in. If not, we'll create one for you instantly. No passwords required.
+              </p>
+          </div>
         </CardContent>
       </Card>
     </div>

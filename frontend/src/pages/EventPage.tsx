@@ -308,20 +308,13 @@ export function EventPage() {
                     </div>
                 </div>
 
-                {/* Secondary Social Login */}
+                {/* Unified Social/Account Login */}
                 {!user && (
-                    <div className="grid grid-cols-2 gap-4">
-                        <Link to="/login">
-                            <Button variant="outline" className="w-full h-11 font-semibold border-white/20 hover:bg-white/5 transition-all">
-                                Log In
-                            </Button>
-                        </Link>
-                        <Link to="/#signup">
-                            <Button variant="secondary" className="w-full h-11 font-semibold transition-all">
-                                Sign Up
-                            </Button>
-                        </Link>
-                    </div>
+                    <Link to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`} className="block">
+                        <Button variant="outline" className="w-full h-12 font-bold border-white/20 hover:bg-white/5 transition-all rounded-xl shadow-sm">
+                            Sign In with Account
+                        </Button>
+                    </Link>
                 )}
             </CardContent>
             </Card>

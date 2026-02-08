@@ -78,18 +78,21 @@ export function EventPage() {
   }, [eventData?.participants])
 
   // Hydrate existing availability on load
+  // Hydrate existing availability on load
   useEffect(() => {
     if (hasLoaded || participants.length === 0 || !name) return
 
     const myRecord = participants.find(isMe)
+    // Only hydrate if we found a record. If not, it means we are new, so we start empty (default).
+    // But we MUST set hasLoaded to true to stop future overwrites.
+
     if (myRecord) {
         if (Array.isArray(myRecord.availability)) {
             setSelectedSlots(new Set(myRecord.availability))
         }
     }
-    // Mark as loaded even if no record found, to prevent future polling from wiping new edits
     setHasLoaded(true)
-  }, [participants, name, hasLoaded])
+  }, [participants, name, hasLoaded, isMe])
 
   // Columns State
   const [columns, setColumns] = useState<{ label: string; subLabel?: string }[]>([])

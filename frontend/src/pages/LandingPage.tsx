@@ -22,6 +22,26 @@ export function LandingPage() {
           background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
         }
 
+        .tape-strip {
+          position: absolute;
+          top: -12px;
+          left: 50%;
+          transform: translateX(-50%) rotate(-2deg);
+          width: 120px;
+          height: 35px;
+          background-color: rgba(255, 255, 255, 0.4);
+          border-left: 1px dashed rgba(0, 0, 0, 0.1);
+          border-right: 1px dashed rgba(0, 0, 0, 0.1);
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          opacity: 0.7;
+          z-index: 10;
+          backdrop-filter: blur(2px);
+          mask-image: url("data:image/svg+xml,%3Csvg width='200' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 .5c5 2 10-2 15 2s10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2v50c-5-2-10 2-15-2s-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2z' fill='black'/%3E%3C/svg%3E");
+          -webkit-mask-image: url("data:image/svg+xml,%3Csvg width='200' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 .5c5 2 10-2 15 2s10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2 10-2 15 2v50c-5-2-10 2-15-2s-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2-10 2-15-2z' fill='black'/%3E%3C/svg%3E");
+          mask-size: cover;
+          -webkit-mask-size: cover;
+        }
+
         .border-sketch {
             border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
             border: 2px solid #1e293b;
@@ -40,7 +60,7 @@ export function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b-2 border-slate-900/5 bg-[#fafaf9]/80 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center">
-            <img src="/alyne-logo.svg" alt="Alyne" className="h-6" />
+            <img src="/alyne-logo.svg" alt="Alyne" className="h-7" />
           </Link>
 
           {/* Desktop nav */}
@@ -81,12 +101,20 @@ export function LandingPage() {
               <Link to="/create" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="ghost" className="w-full justify-start">Quick Event</Button>
               </Link>
-              <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start">Log in</Button>
-              </Link>
-              <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full">Get Started</Button>
-              </Link>
+              {user ? (
+                <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                  <Button className="w-full justify-start">Go to Dashboard</Button>
+                </Link>
+              ) : (
+                <>
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Log in</Button>
+                  </Link>
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="w-full">Get Started</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -104,7 +132,7 @@ export function LandingPage() {
             <span className="tracking-wide">Team scheduling made simple</span>
           </div>
 
-          <h1 className="text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-8 text-slate-900 leading-[0.9]">
+          <h1 className="text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-8 text-slate-900 leading-[0.9] drop-shadow-sm">
             Find the perfect time,
             <br />
             <span className="relative inline-block mt-2">
@@ -191,7 +219,15 @@ export function LandingPage() {
             <h2 className="text-3xl font-bold mb-4">Simple as...</h2>
           </div>
 
-          <div className="space-y-8">
+          <div className="space-y-8 relative">
+             {/* Dashed Connecting Line (Absolute) */}
+             <div className="absolute left-[24px] top-[24px] bottom-[24px] w-0.5 border-l-2 border-dashed border-slate-300 -z-10 bg-transparent hidden md:block md:w-auto md:h-auto md:border-l-0">
+                  <svg className="absolute top-0 left-0 w-full h-full visible md:visible" preserveAspectRatio="none">
+                      <line x1="24" y1="24" x2="24" y2="100%" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="6 6" />
+                  </svg>
+             </div>
+
+
             <Step
               number={1}
               title="Create your team"
@@ -244,7 +280,8 @@ export function LandingPage() {
 
 function FeatureCard({ icon, title, description, rotation = "rotate-0" }: { icon: React.ReactNode; title: string; description: string, rotation?: string }) {
   return (
-    <div className={`p-8 bg-white border-sketch shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group ${rotation}`}>
+    <div className={`relative p-8 bg-white border-sketch shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group ${rotation}`}>
+        <div className="tape-strip" />
       <div className="h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-800 mb-6 group-hover:scale-110 transition-transform border-2 border-slate-900/10">
         {icon}
       </div>
@@ -257,12 +294,18 @@ function FeatureCard({ icon, title, description, rotation = "rotate-0" }: { icon
 function Step({ number, title, description }: { number: number; title: string; description: string }) {
   return (
     <div className="flex gap-6 items-start group">
-      <div className="flex-shrink-0 h-12 w-12 rounded-full border-2 border-slate-900 bg-white flex items-center justify-center text-slate-900 font-bold text-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,0.8)] group-hover:translate-x-1 group-hover:translate-y-1 group-hover:shadow-none transition-all">
-        {number}
+      <div className="relative flex-shrink-0 h-12 w-12 flex items-center justify-center">
+        {/* Hand-drawn circle SVG */}
+        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full text-slate-900 group-hover:text-primary transition-colors rotate-12 group-hover:rotate-0 duration-300">
+             <path d="M95 50c0 25-20 45-45 45S5 75 5 50 25 5 50 5s45 20 45 45z" fill="white" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="300 10"  />
+             {/* Slightly different path for sketchiness */}
+             <path d="M50 5C25 5 5 25 5 50s20 45 45 45 45-20 45-45S75 5 50 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.5" strokeDasharray="10 5" className="opacity-0 group-hover:opacity-100 transition-opacity" />
+        </svg>
+        <span className="relative z-10 font-bold text-lg text-slate-900">{number}</span>
       </div>
-      <div>
-        <h3 className="text-lg font-semibold mb-1">{title}</h3>
-        <p className="text-muted-foreground">{description}</p>
+      <div className="pt-1">
+        <h3 className="text-lg font-bold mb-1 font-hand tracking-wide text-2xl">{title}</h3>
+        <p className="text-muted-foreground leading-relaxed">{description}</p>
       </div>
     </div>
   )

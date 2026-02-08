@@ -29,7 +29,7 @@ const SidebarContent = ({ user, showNav, isActive, onNavItemClick, children, han
 
   return (
     <div className="flex flex-col h-full">
-      <Link to="/" className="flex items-center mb-10 px-2" onClick={onNavItemClick}>
+      <Link to="/" className="hidden md:flex items-center mb-10 px-2" onClick={onNavItemClick}>
         <img src="/alyne-logo.svg" alt="Alyne" className="h-7" />
       </Link>
 
@@ -106,7 +106,7 @@ export function Sidebar({ children, showNav = true, className }: SidebarProps) {
   return (
     <>
       {/* Mobile Top Header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-[60] border-b border-border bg-background/95 backdrop-blur-md px-4 h-16 flex items-center justify-between">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-[60] border-b border-border bg-background/95 backdrop-blur-md px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center">
           <img src="/alyne-logo.svg" alt="Alyne" className="h-7" />
         </Link>

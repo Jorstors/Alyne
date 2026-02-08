@@ -623,8 +623,7 @@ function HeatmapGrid({
     onHover: (slotId: string | null) => void,
     hoveredParticipantSlots: Set<string> | null,
     startTime: string,
-    endTime: string,
-
+    endTime: string
 }) {
     // Local state to track hover instantly
     const [localHoveredSlot, setLocalHoveredSlot] = useState<string | null>(null)

@@ -393,7 +393,7 @@ export function EventPage() {
             {/* Split View */}
             <div className="grid xl:grid-cols-2 gap-8 relative z-10">
                 {/* My Availability */}
-                <Card className="shadow-sm border bg-card flex flex-col h-[700px] overflow-hidden">
+                <Card className="shadow-sm border bg-card flex flex-col overflow-hidden h-fit">
                     <CardHeader className="pb-4 border-b">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -410,7 +410,7 @@ export function EventPage() {
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 overflow-auto flex-1 relative bg-card">
+                    <CardContent className="p-0 flex-1 relative bg-card">
                         <InteractiveGrid
                           columns={columns}
                           selectedSlots={selectedSlots}
@@ -420,7 +420,7 @@ export function EventPage() {
                 </Card>
 
                 {/* Group Availability */}
-                <Card className="shadow-sm border bg-card flex flex-col h-[700px] overflow-hidden">
+                <Card className="shadow-sm border bg-card flex flex-col overflow-hidden h-fit">
                      <CardHeader className="pb-4 border-b">
                         <div className="flex items-center justify-between">
                              <div className="flex items-center gap-3">
@@ -437,7 +437,7 @@ export function EventPage() {
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 overflow-auto flex-1 relative bg-card">
+                    <CardContent className="p-0 flex-1 relative bg-card">
                          <HeatmapGrid
                           columns={columns}
                           slotToNames={slotToNames}
@@ -496,8 +496,8 @@ function InteractiveGrid({ columns, selectedSlots, onSlotToggle }: InteractiveGr
     const [isDragging, setIsDragging] = useState(false)
     const [dragMode, setDragMode] = useState<'add' | 'remove'>('add')
 
-    // Rows (9 AM to 5 PM = 9 hours)
-    const rows = Array.from({ length: 9 })
+    // 8 hours * 2 = 16 slots.
+    const rows = Array.from({ length: 16 })
 
     const handleMouseDown = (slotId: string) => {
         setIsDragging(true)
@@ -544,12 +544,25 @@ function InteractiveGrid({ columns, selectedSlots, onSlotToggle }: InteractiveGr
 
                         {/* Rows */}
                         {rows.map((_, i) => {
-                            const hour = 9 + i
-                            const time = `${hour > 12 ? hour - 12 : hour} ${hour >= 12 ? 'PM' : 'AM'}`
+                            // Time Logic
+                            const startHour = 9
+                            const totalMinutes = i * 30
+                            const hour = startHour + Math.floor(totalMinutes / 60)
+                            const minutes = totalMinutes % 60
+                            const ampm = hour >= 12 ? 'PM' : 'AM'
+                            const displayHour = hour > 12 ? hour - 12 : hour
+
+                            // Simplified Label
+                            // Hour: "10 AM" (bold)
+                            // Half: ":30" (small)
+                            const timeLabel = minutes === 0
+                                ? <span className="font-bold text-foreground/80">{displayHour} <span className="text-[10px] font-normal text-muted-foreground">{ampm}</span></span>
+                                : <span className="text-[10px] text-muted-foreground/60">:30</span>
+
                             return (
                                 <div key={i} className="contents">
-                                    <div className="bg-background p-2 text-xs text-right text-muted-foreground -mt-2.5 sticky left-0 z-10">
-                                        {time}
+                                    <div className={`bg-background px-2 py-1 text-xs text-right -mt-2.5 sticky left-0 z-10 flex items-center justify-end ${minutes === 0 ? '' : ''}`}>
+                                        {timeLabel}
                                     </div>
                                     {columns.map((_, j) => {
                                         const slotId = `${i}-${j}`
@@ -559,9 +572,9 @@ function InteractiveGrid({ columns, selectedSlots, onSlotToggle }: InteractiveGr
                                                 key={slotId}
                                                 onMouseDown={() => handleMouseDown(slotId)}
                                                 onMouseEnter={() => handleMouseEnter(slotId)}
-                                                className={`bg-background h-10 cursor-pointer transition-colors relative group border-t border-dashed border-gray-100 ${
+                                                className={`bg-background h-8 cursor-pointer transition-colors relative group border-t border-dashed border-border/50 ${
                                                     isSelected ? 'bg-green-500 hover:bg-green-600' : 'hover:bg-green-100'
-                                                }`}
+                                                } ${minutes === 30 ? 'border-border/30' : ''}`}
                                             >
                                             </div>
                                         )
@@ -592,7 +605,7 @@ function HeatmapGrid({
     onHover: (slotId: string | null) => void,
     hoveredParticipantSlots: Set<string> | null
 }) {
-     const rows = Array.from({ length: 9 })
+     const rows = Array.from({ length: 16 })
 
      return (
         <div className="w-full overflow-hidden relative group" onMouseLeave={() => onHover(null)}>
@@ -617,12 +630,22 @@ function HeatmapGrid({
 
                         {/* Rows */}
                         {rows.map((_, i) => {
-                            const hour = 9 + i
-                            const time = `${hour > 12 ? hour - 12 : hour} ${hour >= 12 ? 'PM' : 'AM'}`
+                            const startHour = 9
+                            const totalMinutes = i * 30
+                            const hour = startHour + Math.floor(totalMinutes / 60)
+                            const minutes = totalMinutes % 60
+                            const ampm = hour >= 12 ? 'PM' : 'AM'
+                            const displayHour = hour > 12 ? hour - 12 : hour
+
+                            // Simplified Label
+                            const timeLabel = minutes === 0
+                                ? <span className="font-bold text-foreground/80">{displayHour} <span className="text-[10px] font-normal text-muted-foreground">{ampm}</span></span>
+                                : <span className="text-[10px] text-muted-foreground/60">:30</span>
+
                             return (
                                 <div key={i} className="contents">
-                                    <div className="bg-background p-2 text-xs text-right text-muted-foreground -mt-2.5 sticky left-0 z-10">
-                                        {time}
+                                    <div className={`bg-background px-2 py-1 text-xs text-right -mt-2.5 sticky left-0 z-10 flex items-center justify-end ${minutes === 0 ? '' : ''}`}>
+                                        {timeLabel}
                                     </div>
                                     {columns.map((_, j) => {
                                         const slotId = `${i}-${j}`
@@ -636,7 +659,7 @@ function HeatmapGrid({
                                         <div
                                             key={`${i}-${j}`}
                                             className={cn(
-                                                "bg-background h-10 relative group transition-all duration-200",
+                                                "bg-background h-8 relative group transition-all duration-200",
                                                 isHoveredParticipantSlot ? "z-20 ring-2 ring-primary ring-inset shadow-[0_0_15px_rgba(var(--primary),0.3)]" : ""
                                             )}
                                             onMouseEnter={() => onHover(slotId)}

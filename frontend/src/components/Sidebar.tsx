@@ -13,6 +13,81 @@ interface SidebarProps {
   className?: string
 }
 
+interface SidebarContentProps {
+  user: any
+  showNav: boolean
+  isActive: (path: string) => boolean
+  onNavItemClick?: () => void
+  children?: React.ReactNode
+  handleSignOut: () => void
+}
+
+const SidebarContent = ({ user, showNav, isActive, onNavItemClick, children, handleSignOut }: SidebarContentProps) => {
+  const initials = user?.email?.substring(0, 2).toUpperCase() || 'JD'
+  const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'
+  const avatarUrl = user?.user_metadata?.avatar_url
+
+  return (
+    <div className="flex flex-col h-full">
+      <Link to="/" className="flex items-center mb-10 px-2" onClick={onNavItemClick}>
+        <img src="/alyne-logo.svg" alt="Alyne" className="h-7" />
+      </Link>
+
+      {showNav && (
+        <nav className="space-y-1 mb-8">
+          <NavItem
+            href="/dashboard"
+            icon={<LayoutDashboard className="h-4 w-4" />}
+            label="Dashboard"
+            active={isActive('/dashboard')}
+            onClick={onNavItemClick}
+          />
+          <NavItem
+            href="/teams"
+            icon={<Users className="h-4 w-4" />}
+            label="Teams"
+            active={isActive('/teams')}
+            onClick={onNavItemClick}
+          />
+          <NavItem
+            href="/events"
+            icon={<Calendar className="h-4 w-4" />}
+            label="Events"
+            active={isActive('/events')}
+            onClick={onNavItemClick}
+          />
+        </nav>
+      )}
+
+      <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide">
+        {children}
+      </div>
+
+      {user && (
+        <div className="pt-6 border-t border-border mt-auto">
+          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-border/50">
+              <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="relative">
+                      <Avatar className="h-9 w-9 border border-border">
+                          <AvatarImage src={avatarUrl} />
+                          <AvatarFallback>{initials}</AvatarFallback>
+                      </Avatar>
+                  </div>
+                  <div className="flex flex-col">
+                       <span className="text-sm font-semibold truncate max-w-[100px]">{displayName}</span>
+                       <span className="text-[10px] text-muted-foreground truncate max-w-[100px]">{user.email}</span>
+                  </div>
+              </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={handleSignOut} title="Log out">
+                  <LogOut className="h-4 w-4" />
+              </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function Sidebar({ children, showNav = true, className }: SidebarProps) {
   const { user } = useAuth()
   const location = useLocation()
@@ -26,72 +101,6 @@ export function Sidebar({ children, showNav = true, className }: SidebarProps) {
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     window.location.href = '/login'
-  }
-
-  const SidebarContent = ({ onNavItemClick }: { onNavItemClick?: () => void }) => {
-    const initials = user?.email?.substring(0, 2).toUpperCase() || 'JD'
-    const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'
-    const avatarUrl = user?.user_metadata?.avatar_url
-
-    return (
-      <div className="flex flex-col h-full">
-        <Link to="/" className="flex items-center mb-10 px-2" onClick={onNavItemClick}>
-          <img src="/alyne-logo.svg" alt="Alyne" className="h-7" />
-        </Link>
-
-        {showNav && (
-          <nav className="space-y-1 mb-8">
-            <NavItem
-              href="/dashboard"
-              icon={<LayoutDashboard className="h-4 w-4" />}
-              label="Dashboard"
-              active={isActive('/dashboard')}
-              onClick={onNavItemClick}
-            />
-            <NavItem
-              href="/teams"
-              icon={<Users className="h-4 w-4" />}
-              label="Teams"
-              active={isActive('/teams')}
-              onClick={onNavItemClick}
-            />
-            <NavItem
-              href="/events"
-              icon={<Calendar className="h-4 w-4" />}
-              label="Events"
-              active={isActive('/events')}
-              onClick={onNavItemClick}
-            />
-          </nav>
-        )}
-
-        <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide">
-          {children}
-        </div>
-
-        {user && (
-          <div className="pt-6 border-t border-border mt-auto">
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-border/50">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="relative">
-                        <Avatar className="h-9 w-9 border border-border">
-                            <AvatarImage src={avatarUrl} />
-                            <AvatarFallback>{initials}</AvatarFallback>
-                        </Avatar>
-                    </div>
-                    <div className="flex flex-col">
-                         <span className="text-sm font-semibold truncate max-w-[100px]">{displayName}</span>
-                         <span className="text-[10px] text-muted-foreground truncate max-w-[100px]">{user.email}</span>
-                    </div>
-                </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={handleSignOut} title="Log out">
-                    <LogOut className="h-4 w-4" />
-                </Button>
-            </div>
-          </div>
-        )}
-      </div>
-    )
   }
 
   return (
@@ -109,7 +118,15 @@ export function Sidebar({ children, showNav = true, className }: SidebarProps) {
       {/* Mobile Navigation Overlay */}
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 top-16 z-50 bg-background border-t border-border p-6 overflow-y-auto">
-          <SidebarContent onNavItemClick={() => setMobileMenuOpen(false)} />
+          <SidebarContent
+            user={user}
+            showNav={showNav}
+            isActive={isActive}
+            onNavItemClick={() => setMobileMenuOpen(false)}
+            handleSignOut={handleSignOut}
+          >
+            {children}
+          </SidebarContent>
         </div>
       )}
 
@@ -118,7 +135,14 @@ export function Sidebar({ children, showNav = true, className }: SidebarProps) {
         "fixed left-0 top-0 bottom-0 w-72 border-r border-border/40 bg-card p-6 flex flex-col hidden md:flex z-50",
         className
       )}>
-        <SidebarContent />
+        <SidebarContent
+            user={user}
+            showNav={showNav}
+            isActive={isActive}
+            handleSignOut={handleSignOut}
+        >
+            {children}
+        </SidebarContent>
       </aside>
     </>
   )

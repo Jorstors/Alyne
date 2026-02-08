@@ -148,29 +148,44 @@ router.post('/:id/participate', async (req, res) => {
   }
 
   try {
-    // Check if participant already exists (by user_id or email within this event)
-    let matchQuery = supabaseAdmin.from('participants').select('id').eq('event_id', id);
+    // Check for existing participant using multiple strategies
+    let existingId: string | null = null;
 
     if (user_id) {
-       matchQuery = matchQuery.eq('user_id', user_id);
+       const { data } = await supabaseAdmin
+        .from('participants')
+        .select('id')
+        .eq('event_id', id)
+        .eq('user_id', user_id)
+        .limit(1);
+       if (data && data.length > 0) existingId = data[0].id;
     } else if (email) {
-       matchQuery = matchQuery.eq('email', email);
+       const { data } = await supabaseAdmin
+        .from('participants')
+        .select('id')
+        .eq('event_id', id)
+        .eq('email', email)
+        .limit(1);
+       if (data && data.length > 0) existingId = data[0].id;
     } else {
-       // If standard guest with just name, we might just insert new,
-       // OR we could check name+event_id combination to update?
-       // For now, let's assume we allow updates if name matches for simple guests
-       matchQuery = matchQuery.eq('name', name);
+       // Only match by name if we don't have better identifiers
+       const { data } = await supabaseAdmin
+        .from('participants')
+        .select('id')
+        .eq('event_id', id)
+        .eq('name', name)
+        .is('user_id', null)
+        .limit(1);
+       if (data && data.length > 0) existingId = data[0].id;
     }
 
-    const { data: existing } = await matchQuery.maybeSingle();
-
     let result;
-    if (existing) {
+    if (existingId) {
         // Update
         result = await supabaseAdmin
             .from('participants')
-            .update({ availability, name, email }) // Update name/email just in case
-            .eq('id', existing.id)
+            .update({ availability, name, email })
+            .eq('id', existingId)
             .select()
             .single();
     } else {

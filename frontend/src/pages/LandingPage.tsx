@@ -200,9 +200,9 @@ export function LandingPage() {
       {/* Footer */}
       <footer className="py-10 px-6 border-t border-border">
         <div className="mx-auto max-w-6xl flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center">
+          <Link to="/" className="flex items-center opacity-80 hover:opacity-100 transition-opacity">
             <img src="/alyne-logo.svg" alt="Alyne" className="h-5" />
-          </div>
+          </Link>
           <p className="text-sm text-muted-foreground">
             © 2025 Alyne. Team scheduling made easy.
           </p>

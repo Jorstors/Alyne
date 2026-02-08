@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
-import { Loader2, Copy, Check, Users } from 'lucide-react'
+import { Loader2, Copy, Check, Users, ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/components/AuthProvider'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,7 @@ import { Sidebar } from '@/components/Sidebar'
 
 export function EventPage() {
   const { id } = useParams()
+  const { user } = useAuth()
 
   const [name, setName] = useState('')
   const [isSignedIn, setIsSignedIn] = useState(false)
@@ -56,8 +57,9 @@ export function EventPage() {
         if (Array.isArray(myRecord.availability)) {
             setSelectedSlots(new Set(myRecord.availability))
         }
-        setHasLoaded(true)
     }
+    // Mark as loaded even if no record found, to prevent future polling from wiping new edits
+    setHasLoaded(true)
   }, [eventData, name, hasLoaded])
 
   // Columns State
@@ -128,15 +130,18 @@ export function EventPage() {
   const [slotToNames, setSlotToNames] = useState<Map<string, string[]>>(new Map())
   const [totalParticipants, setTotalParticipants] = useState(0)
 
-  // Re-calculate group heatmap whenever eventData changes
+  // Re-calculate group heatmap whenever eventData OR local state changes
   useEffect(() => {
     if (!eventData?.participants) return
 
     const mapping = new Map<string, string[]>()
-    let total = 0
+    const participants = eventData.participants || []
+    const amIParticipant = participants.some((p: any) => p.name === name)
 
-    eventData.participants.forEach((p: any) => {
-        total++
+    // 1. Process all participants except myself
+    participants.forEach((p: any) => {
+        if (p.name === name) return // Skip server data for myself
+
         if (Array.isArray(p.availability)) {
             p.availability.forEach((slot: string) => {
                 const current = mapping.get(slot) || []
@@ -146,9 +151,19 @@ export function EventPage() {
         }
     })
 
+    // 2. Inject local state for myself instantly
+    if (name) {
+        selectedSlots.forEach((slot: string) => {
+            const current = mapping.get(slot) || []
+            current.push(name)
+            mapping.set(slot, current)
+        })
+    }
+
     setSlotToNames(mapping)
-    setTotalParticipants(total)
-  }, [eventData])
+    // Total is server count + 1 if I'm new, or just server count if I'm already in list
+    setTotalParticipants(amIParticipant ? participants.length : (name ? participants.length + 1 : participants.length))
+  }, [eventData, selectedSlots, name])
 
   // Polling for Real-time updates (every 3s)
   useEffect(() => {
@@ -177,7 +192,8 @@ export function EventPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 name,
-                availability: Array.from(selectedSlots)
+                availability: Array.from(selectedSlots),
+                user_id: user?.id
             })
         })
         if (!res.ok) throw new Error('Failed to save')
@@ -188,12 +204,10 @@ export function EventPage() {
     }, 1000) // Debounce 1s
 
     return () => clearTimeout(timer)
-  }, [selectedSlots, isSignedIn, name, id, API_URL])
+  }, [selectedSlots, isSignedIn, name, id, API_URL, user?.id])
 
   // Derived state for highlighting
   const highlightedNames = hoveredSlot ? (slotToNames.get(hoveredSlot) || []) : []
-
-  const { user } = useAuth()
 
   // Auto-fill name if logged in
   useEffect(() => {
@@ -216,64 +230,68 @@ export function EventPage() {
 
           <div className="relative w-full max-w-md animate-in fade-in zoom-in duration-500">
               <div className="text-center mb-8">
-                  <div className="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-sm mb-4 ring-1 ring-black/5">
-                      <img src="/alyne-logo.svg" alt="Alyne" className="h-8" />
-                  </div>
-                  <h1 className="text-3xl font-bold tracking-tight mb-2">{eventData?.title || 'Event Sign In'}</h1>
-                  <p className="text-muted-foreground">Join the event to share your availability.</p>
+                  <Link to="/" className="flex justify-center mb-8 opacity-90 hover:opacity-100 transition-opacity">
+                      <img src="/alyne-logo.svg" alt="Alyne" className="h-9" />
+                  </Link>
               </div>
 
-            <Card className="shadow-xl bg-card/80 backdrop-blur-xl border-white/20 ring-1 ring-black/5">
-            <CardHeader className="space-y-1 pb-2">
-                <CardTitle className="text-xl">Authentication</CardTitle>
-                <CardDescription>
-                  Enter your name to continue as a guest or login.
+            <Card className="shadow-2xl bg-card border-none ring-0">
+            <CardHeader className="text-center pb-2">
+                <CardTitle className="text-3xl font-extrabold tracking-tight">{eventData?.title || 'Join Event'}</CardTitle>
+                <CardDescription className="text-base font-medium mt-1">
+                  {eventData?.description || 'Join the event to share your availability.'}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="pt-4">
-                <div className="grid gap-6">
-                    {!user && (
-                         <div className="grid grid-cols-2 gap-3">
-                            <Link to="/login">
-                                <Button variant="outline" className="w-full">Log In</Button>
-                            </Link>
-                            <Link to="/#signup">
-                                <Button variant="secondary" className="w-full">Sign Up</Button>
-                            </Link>
-                         </div>
-                    )}
-
-                    <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-background px-2 text-muted-foreground">Or continue as guest</span>
-                        </div>
-                    </div>
-
-                    <form onSubmit={handleSignIn} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Display Name</Label>
-                            <Input
+            <CardContent className="pt-6 space-y-8">
+                {/* Primary Guest Entry */}
+                <form onSubmit={handleSignIn} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="name" className="text-sm font-semibold text-foreground/70 ml-1">Display Name</Label>
+                        <Input
                             id="name"
                             placeholder="How should we call you?"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             autoFocus
-                            className="h-11"
-                            />
-                        </div>
-                        <Button type="submit" size="lg" className="w-full font-semibold shadow-lg shadow-primary/20" disabled={!name.trim()}>
-                            Enter Event
-                        </Button>
-                    </form>
+                            className="h-12 text-lg bg-background/50 border-white/20 focus:ring-primary/20 transition-all"
+                        />
+                    </div>
+                    <Button type="submit" size="lg" className="w-full h-12 text-base font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all rounded-xl" disabled={!name.trim()}>
+                        Enter Event
+                        <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                    </Button>
+                </form>
+
+                <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-border/50" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase tracking-widest font-bold">
+                        <span className="bg-card px-3 text-muted-foreground/60">or join with account</span>
+                    </div>
                 </div>
+
+                {/* Secondary Social Login */}
+                {!user && (
+                    <div className="grid grid-cols-2 gap-4">
+                        <Link to="/login">
+                            <Button variant="outline" className="w-full h-11 font-semibold border-white/20 hover:bg-white/5 transition-all">
+                                Log In
+                            </Button>
+                        </Link>
+                        <Link to="/#signup">
+                            <Button variant="secondary" className="w-full h-11 font-semibold transition-all">
+                                Sign Up
+                            </Button>
+                        </Link>
+                    </div>
+                )}
             </CardContent>
             </Card>
             <div className="mt-8 text-center">
-                <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                    &larr; Back to Home
+                <Link to="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2">
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Home
                 </Link>
             </div>
           </div>

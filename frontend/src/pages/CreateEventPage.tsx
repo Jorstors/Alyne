@@ -118,10 +118,17 @@ export function CreateEventPage() {
     }
   }
 
-  const toggleDay = (day: string) => {
-    setSelectedDays(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
-    )
+  const toggleDay = (day: string, force?: boolean) => {
+    setSelectedDays(prev => {
+      const isSelected = prev.includes(day)
+      const newValue = typeof force === 'boolean' ? force : !isSelected
+
+      if (isSelected === newValue) return prev
+
+      return newValue
+        ? [...prev, day]
+        : prev.filter(d => d !== day)
+    })
   }
 
   const handleDateSelect = (
@@ -323,28 +330,26 @@ export function CreateEventPage() {
                            {daysOfWeek.map(day => {
                                const isSelected = selectedDays.includes(day);
                                return (
-                               <div
+                               <label
                                    key={day}
                                    className={cn(
                                        "flex items-center space-x-3 p-3 rounded-xl transition-all cursor-pointer border-2",
                                        isSelected ? "border-primary bg-primary/5 shadow-sm" : "border-transparent hover:bg-muted/50"
                                    )}
-                                   onClick={() => toggleDay(day)}
                                >
                                    <Checkbox
                                      id={day}
                                      checked={isSelected}
-                                     onCheckedChange={() => toggleDay(day)}
+                                     onCheckedChange={(checked) => toggleDay(day, checked as boolean)}
                                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                                    />
-                                   <label
-                                     htmlFor={day}
+                                   <span
                                      className={cn("text-base font-medium leading-none cursor-pointer flex-1", isSelected ? "text-primary" : "text-muted-foreground")}
                                    >
                                      {day}
-                                   </label>
+                                   </span>
                                    {isSelected && <div className="h-2 w-2 rounded-full bg-primary animate-in zoom-in" />}
-                               </div>
+                               </label>
                            )})}
                             <div className="mt-4 text-center">
                                 <span className="text-sm font-medium bg-secondary text-secondary-foreground px-3 py-1 rounded-full">

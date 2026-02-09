@@ -1,10 +1,11 @@
 import { Link, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Users, Plus, Search, ArrowLeft, MoreHorizontal, CheckCircle, Clock, Loader2 } from 'lucide-react'
+import { Users, Plus, Search, ArrowLeft, MoreHorizontal, CheckCircle, Clock, Loader2, Copy } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useEffect, useState } from 'react'
 import { format, parseISO } from 'date-fns'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -83,7 +84,32 @@ export function TeamDetailsPage() {
                 </div>
             </div>
             <div className="flex gap-2">
-                 <Button variant="outline">Manage Members</Button>
+                 <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" className="gap-2">
+                            <Users className="h-4 w-4" />
+                            Invite Member
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Invite to {team.name}</DialogTitle>
+                            <DialogDescription>Share this link to add members to your team.</DialogDescription>
+                        </DialogHeader>
+                        <div className="flex items-center gap-2 mt-2">
+                            <Input value={`${window.location.origin}/join/${id}`} readOnly />
+                            <Button
+                                size="icon"
+                                variant="outline"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}/join/${id}`)
+                                }}
+                            >
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </DialogContent>
+                 </Dialog>
                  <Link to={`/create?teamId=${id}`}>
                     <Button className="gap-2">
                         <Plus className="h-4 w-4" />

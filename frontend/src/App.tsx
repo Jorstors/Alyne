@@ -10,6 +10,7 @@ import {
   CreateTeamPage,
   TeamDetailsPage,
   EventPage,
+  JoinTeamPage,
 } from '@/pages'
 
 import { AuthenticatedLayout } from '@/components/AuthenticatedLayout'
@@ -23,6 +24,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/create" element={<CreateEventPage />} />
         <Route path="/event/:id" element={<EventPage />} />
+        <Route path="/join/:teamId" element={<JoinTeamPage />} />
 
         {/* Authenticated Routes with Layout */}
         <Route element={<AuthenticatedLayout />}>

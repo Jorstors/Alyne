@@ -122,4 +122,58 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// POST /api/teams/:id/join - Join a team
+router.post('/:id/join', async (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured' });
+  if (!user_id) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    // Check if team exists
+    const { data: team, error: teamError } = await supabaseAdmin
+      .from('teams')
+      .select('id')
+      .eq('id', id)
+      .single();
+
+    if (teamError || !team) return res.status(404).json({ error: 'Team not found' });
+
+    // Check if already a member
+    const { data: existingMember } = await supabaseAdmin
+      .from('team_members')
+      .select('user_id')
+      .eq('team_id', id)
+      .eq('user_id', user_id)
+      .maybeSingle(); // Ensure we don't throw if 0 rows
+
+    if (existingMember) {
+      return res.status(200).json({ message: 'You are already a member of this team' });
+    }
+
+    // Add to team
+    const { error: joinError } = await supabaseAdmin
+      .from('team_members')
+      .insert([{
+        team_id: id,
+        user_id,
+        role: 'member'
+      }]);
+
+    if (joinError) {
+        // Handle race condition or unique constraint explicitly
+        if (joinError.code === '23505') { // Postgres unique_violation
+            return res.status(200).json({ message: 'You are already a member of this team' });
+        }
+        throw joinError;
+    }
+
+    res.json({ message: 'Joined team successfully' });
+  } catch (error: any) {
+    console.error('Join Team Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

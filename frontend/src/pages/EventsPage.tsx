@@ -1,10 +1,13 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea' // New import
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Calendar, Search, Clock, MoreHorizontal, Plus } from 'lucide-react'
+import { Calendar, Search, Clock, MoreHorizontal, Plus, Trash2, Edit2, Loader2 } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
@@ -17,6 +20,75 @@ export function EventsPage() {
   const [events, setEvents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+
+  // Action States
+  const [deletingEvent, setDeletingEvent] = useState<any>(null)
+  const [editingEvent, setEditingEvent] = useState<any>(null)
+  const [actionLoading, setActionLoading] = useState(false)
+
+  // Edit Form State
+  const [editForm, setEditForm] = useState({ title: '', description: '' })
+
+  const handleDeleteClick = (event: any) => {
+      setDeletingEvent(event)
+  }
+
+  const confirmDelete = async () => {
+      if (!deletingEvent) return
+      try {
+          setActionLoading(true)
+          const res = await fetch(`${API_URL}/events/${deletingEvent.id}?user_id=${user?.id}`, {
+              method: 'DELETE'
+          })
+
+          if (!res.ok) throw new Error('Failed to delete')
+
+          // Update UI
+          setEvents(prev => prev.filter(e => e.id !== deletingEvent.id))
+          setDeletingEvent(null)
+      } catch (err) {
+          console.error(err)
+          alert('Failed to delete event')
+      } finally {
+          setActionLoading(false)
+      }
+  }
+
+  const handleEditClick = (event: any) => {
+      setEditingEvent(event)
+      setEditForm({
+          title: event.title,
+          description: event.description || ''
+      })
+  }
+
+  const saveEdit = async () => {
+      if (!editingEvent) return
+      try {
+          setActionLoading(true)
+          const res = await fetch(`${API_URL}/events/${editingEvent.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  ...editForm,
+                  user_id: user?.id
+              })
+          })
+
+          if (!res.ok) throw new Error('Failed to update')
+
+          const updatedEvent = await res.json()
+
+          // Update UI
+          setEvents(prev => prev.map(e => e.id === editingEvent.id ? { ...e, ...updatedEvent } : e))
+          setEditingEvent(null)
+      } catch (err) {
+          console.error(err)
+          alert('Failed to update event')
+      } finally {
+          setActionLoading(false)
+      }
+  }
 
   useEffect(() => {
     if (!user?.id) return
@@ -118,30 +190,98 @@ export function EventsPage() {
           <TabsTrigger value="past">Past</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-8 relative z-10">
+        <TabsContent value="all" className="space-y-4 relative z-10">
              {filteredEvents.length === 0 ? (
                 <EmptyState />
              ) : (
                 filteredEvents.map(event => (
-                    <EventCard key={event.id} event={event} />
+                    <EventCard
+                        key={event.id}
+                        event={event}
+                        onEdit={() => handleEditClick(event)}
+                        onDelete={() => handleDeleteClick(event)}
+                        currentUserId={user?.id}
+                    />
                 ))
              )}
         </TabsContent>
-
-        <TabsContent value="upcoming" className="space-y-8 relative z-10">
-             {filteredEvents.length === 0 ? (
-                <EmptyState />
-             ) : (
-                filteredEvents.map(event => (
-                    <EventCard key={event.id} event={event} />
-                ))
-             )}
+        {/* Simplified tabs for now - reusing same content or logic as needed */}
+        <TabsContent value="upcoming" className="space-y-4 relative z-10">
+             {filteredEvents.filter(e => new Date(e.created_at) > new Date(Date.now() - 86400000)).map(event => (
+                    <EventCard
+                        key={event.id}
+                        event={event}
+                        onEdit={() => handleEditClick(event)}
+                        onDelete={() => handleDeleteClick(event)}
+                        currentUserId={user?.id}
+                    />
+             ))}
+             {filteredEvents.filter(e => new Date(e.created_at) > new Date(Date.now() - 86400000)).length === 0 && <div className="text-center py-8 text-muted-foreground">No upcoming events found</div>}
         </TabsContent>
 
         <TabsContent value="past" className="space-y-4">
              <div className="text-center py-8 text-muted-foreground">No past events</div>
         </TabsContent>
       </Tabs>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deletingEvent} onOpenChange={(open) => !open && setDeletingEvent(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Delete Event</DialogTitle>
+                <DialogDescription>
+                    Are you sure you want to delete "{deletingEvent?.title}"? This action cannot be undone.
+                </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+                <Button variant="ghost" onClick={() => setDeletingEvent(null)} disabled={actionLoading}>Cancel</Button>
+                <Button variant="destructive" onClick={confirmDelete} disabled={actionLoading}>
+                    {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Delete
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Event Dialog */}
+      <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+                <DialogTitle>Edit Event</DialogTitle>
+                <DialogDescription>
+                    Update the details for "{editingEvent?.title}".
+                </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="title">Event Title</Label>
+                    <Input
+                        id="title"
+                        value={editForm.title}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                        placeholder="e.g. Weekly Standup"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                        id="description"
+                        value={editForm.description}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Add a description..."
+                        className="min-h-[100px]"
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="ghost" onClick={() => setEditingEvent(null)} disabled={actionLoading}>Cancel</Button>
+                <Button onClick={saveEdit} disabled={actionLoading}>
+                    {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Changes
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
@@ -159,12 +299,14 @@ function EmptyState() {
 }
 
 
-function EventCard({ event }: { event: any }) {
+function EventCard({ event, onEdit, onDelete, currentUserId }: { event: any, onEdit: () => void, onDelete: () => void, currentUserId: string | undefined }) {
   // Determine display date
   let dateStr = event.created_at
   try {
       dateStr = format(parseISO(event.created_at), 'MMM d, yyyy')
   } catch (e) {}
+
+  const isOwner = event.created_by === currentUserId
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -192,21 +334,30 @@ function EventCard({ event }: { event: any }) {
             </div>
           </div>
 
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-2">
              <Link to={`/event/${event.id}`}>
                 <Button variant="outline" size="sm">View</Button>
              </Link>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>Edit event</DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+             {isOwner && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={onEdit} className="cursor-pointer">
+                        <Edit2 className="mr-2 h-4 w-4" />
+                        Edit event
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onDelete} className="text-destructive cursor-pointer focus:text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+             )}
           </div>
         </div>
       </CardContent>

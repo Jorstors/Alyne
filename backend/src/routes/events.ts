@@ -231,4 +231,76 @@ router.post('/:id/participate', async (req, res) => {
   }
 });
 
+// PUT /api/events/:id - Update event details
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const { title, description, user_id } = req.body;
+
+  if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured' });
+  if (!user_id) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    // 1. Verify ownership
+    const { data: event, error: fetchError } = await supabaseAdmin
+      .from('events')
+      .select('created_by')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !event) return res.status(404).json({ error: 'Event not found' });
+    if (event.created_by !== user_id) return res.status(403).json({ error: 'Forbidden' });
+
+    // 2. Update
+    const { data: updatedEvent, error: updateError } = await supabaseAdmin
+      .from('events')
+      .update({ title, description })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    res.json(updatedEvent);
+  } catch (error: any) {
+    console.error('Update Event Error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// DELETE /api/events/:id - Delete event
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.query; // Pass as query param for delete
+
+  if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured' });
+  if (!user_id || typeof user_id !== 'string') return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    // 1. Verify ownership
+    const { data: event, error: fetchError } = await supabaseAdmin
+      .from('events')
+      .select('created_by')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !event) return res.status(404).json({ error: 'Event not found' });
+    if (event.created_by !== user_id) return res.status(403).json({ error: 'Forbidden' });
+
+    // 2. Delete (Assumes Cascade Delete on foreign keys, otherwise manual cleanup needed)
+    // We'll attempt delete. If it fails due to FK, we might need manual cleanup of participants.
+    // Ideally, Supabase tables are set with ON DELETE CASCADE.
+    const { error: deleteError } = await supabaseAdmin
+      .from('events')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) throw deleteError;
+
+    res.json({ message: 'Event deleted successfully' });
+  } catch (error: any) {
+    console.error('Delete Event Error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
 export default router;

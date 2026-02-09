@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Sidebar } from '@/components/Sidebar'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Loader2, Copy, Check, Users, ArrowLeft, MoreHorizontal, Edit2, Trash2 } from 'lucide-react'
+import { Loader2, Copy, Check, Users, ArrowLeft, MoreHorizontal, Edit2, Trash2, Calendar } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
@@ -77,6 +77,88 @@ export function EventPage() {
           alert('Failed to delete event')
           setActionLoading(false)
       }
+  }
+
+  // Calendar Export Logic
+  const getEventDates = () => {
+      if (!eventData?.configuration) return null;
+      const { startTime, endTime } = eventData.configuration;
+      let start = new Date();
+
+      // Determine the single "next" date to allow adding to calendar.
+      // For multi-date events, we usually just add the first one or next upcoming one.
+
+      if (eventData.event_type === 'specific_dates' && eventData.configuration.dates?.length) {
+          const dates = eventData.configuration.dates.sort();
+          const nowStr = new Date().toISOString().split('T')[0];
+          const nextDate = dates.find((d: string) => d >= nowStr) || dates[dates.length - 1];
+          start = parseISO(nextDate);
+      } else if (eventData.event_type === 'days_of_week' && eventData.configuration.days?.length) {
+          // Find next occurrence (simplification)
+          // Just use today for now if it matches, or upcoming.
+          // Actually, let's just default to today/tomorrow logic if simple.
+          // For MVP, if it's weekly, just set it for the next occurrence of the first day in list.
+          start = new Date(); // TODO: Better logic for weekly
+      }
+
+      // Set times
+      if (startTime) {
+          const [sh, sm] = startTime.split(':').map(Number);
+          start.setHours(sh, sm, 0, 0);
+      }
+
+      const end = new Date(start);
+      if (endTime) {
+          const [eh, em] = endTime.split(':').map(Number);
+          end.setHours(eh, em, 0, 0);
+      } else {
+          end.setHours(start.getHours() + 1); // Default 1h
+      }
+
+      return { start, end };
+  }
+
+  const addToGoogleCalendar = () => {
+      const dates = getEventDates();
+      if (!dates) return;
+      const { start, end } = dates;
+
+      const text = encodeURIComponent(eventData.title || 'Event');
+      const details = encodeURIComponent(eventData.description || '');
+      // Format: YYYYMMDDTHHmmss
+      const formatGCal = (d: Date) => d.toISOString().replace(/[-:.]/g, '').split('.')[0] + 'Z'; // Use UTC
+
+      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&details=${details}&dates=${formatGCal(start)}/${formatGCal(end)}`;
+      window.open(url, '_blank');
+  }
+
+  const downloadIcs = () => {
+      const dates = getEventDates();
+      if (!dates) return;
+      const { start, end } = dates;
+
+      const formatICS = (d: Date) => d.toISOString().replace(/[-:.]/g, '').split('.')[0] + 'Z'; // Use UTC
+
+      const icsContent = [
+          'BEGIN:VCALENDAR',
+          'VERSION:2.0',
+          'BEGIN:VEVENT',
+          `SUMMARY:${eventData.title || 'Event'}`,
+          `DESCRIPTION:${eventData.description || ''}`,
+          `DTSTART:${formatICS(start)}`,
+          `DTEND:${formatICS(end)}`,
+          'END:VEVENT',
+          'END:VCALENDAR'
+      ].join('\r\n');
+
+      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${(eventData.title || 'event').replace(/\s+/g, '_')}.ics`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
   }
 
   // Availability State
@@ -444,6 +526,23 @@ export function EventPage() {
                     <p className="text-muted-foreground mt-1">Paint over the times you are available. Changes are saved automatically.</p>
                 </div>
                 <div className="flex items-center gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="lg" className="gap-2 rounded-full hover:bg-muted shadow-sm">
+                                <Calendar className="h-4 w-4" />
+                                <span className="hidden sm:inline">Add to Calendar</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={addToGoogleCalendar}>
+                                Google Calendar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={downloadIcs}>
+                                Download .ics File
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
                     <Button variant="outline" size="lg" onClick={copyLink} className="gap-2 rounded-full hover:bg-muted shadow-sm">
                         {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                         {isCopied ? 'Link Copied!' : 'Share Event Link'}

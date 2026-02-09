@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
-import { Loader2, Copy, Check, Users, ArrowLeft } from 'lucide-react'
+
 import { useAuth } from '@/components/AuthProvider'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Sidebar } from '@/components/Sidebar'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Loader2, Copy, Check, Users, ArrowLeft, MoreHorizontal, Edit2, Trash2 } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
 export function EventPage() {
@@ -19,6 +23,61 @@ export function EventPage() {
   const [isSignedIn, setIsSignedIn] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
   const [hoveredParticipantId, setHoveredParticipantId] = useState<string | null>(null)
+
+  // Edit/Delete State
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [actionLoading, setActionLoading] = useState(false)
+  const [editForm, setEditForm] = useState({ title: '', description: '' })
+
+  const handleEditClick = () => {
+      setEditForm({
+          title: eventData?.title || '',
+          description: eventData?.description || ''
+      })
+      setIsEditOpen(true)
+  }
+
+  const saveEdit = async () => {
+      if (!eventData?.id) return
+      try {
+          setActionLoading(true)
+          const res = await fetch(`${API_URL}/events/${eventData.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  ...editForm,
+                  user_id: user?.id
+              })
+          })
+          if (!res.ok) throw new Error('Failed to update event')
+          const updated = await res.json()
+          setEventData((prev: any) => ({ ...prev, ...updated }))
+          setIsEditOpen(false)
+      } catch (e) {
+          console.error(e)
+          alert('Failed to update event')
+      } finally {
+          setActionLoading(false)
+      }
+  }
+
+  const confirmDelete = async () => {
+      if (!eventData?.id) return
+      try {
+          setActionLoading(true)
+          const res = await fetch(`${API_URL}/events/${eventData.id}?user_id=${user?.id}`, {
+              method: 'DELETE'
+          })
+          if (!res.ok) throw new Error('Failed to delete event')
+          // Redirect to dashboard
+          window.location.href = '/dashboard'
+      } catch (e) {
+          console.error(e)
+          alert('Failed to delete event')
+          setActionLoading(false)
+      }
+  }
 
   // Availability State
   const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set())
@@ -384,10 +443,32 @@ export function EventPage() {
                     <h2 className="text-3xl font-bold tracking-tight text-foreground">Cast your vote</h2>
                     <p className="text-muted-foreground mt-1">Paint over the times you are available. Changes are saved automatically.</p>
                 </div>
-                <Button variant="outline" size="lg" onClick={copyLink} className="gap-2 rounded-full hover:bg-muted shadow-sm">
-                    {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                    {isCopied ? 'Link Copied!' : 'Share Event Link'}
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="lg" onClick={copyLink} className="gap-2 rounded-full hover:bg-muted shadow-sm">
+                        {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                        {isCopied ? 'Link Copied!' : 'Share Event Link'}
+                    </Button>
+
+                    {user?.id === eventData?.created_by && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={handleEditClick}>
+                                    <Edit2 className="mr-2 h-4 w-4" />
+                                    Edit Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setIsDeleteOpen(true)} className="text-destructive focus:text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete Event
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
+                </div>
             </div>
 
             {/* Split View */}
@@ -486,6 +567,61 @@ export function EventPage() {
 
         </div>
       </main>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Event Details</DialogTitle>
+            <DialogDescription>Update the title and description of your event.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Event Title</Label>
+              <Input
+                id="edit-title"
+                value={editForm.title}
+                onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-desc">Description</Label>
+              <Textarea
+                id="edit-desc"
+                value={editForm.description}
+                onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+            <Button onClick={saveEdit} disabled={actionLoading}>
+              {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Event?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete the event "{eventData?.title}" and all participant data.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={actionLoading}>
+              {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete Event
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

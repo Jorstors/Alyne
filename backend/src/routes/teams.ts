@@ -12,7 +12,16 @@ router.get('/', async (req, res) => {
 
   try {
     // Get teams where user is a member
-    const { data: teams, error } = await supabaseAdmin
+    // We need to fetch counts too. Supabase-js select with count:
+    // select('*, team_members(count), events(count)') inside the joined resource is tricky.
+    // Let's do it in two steps for simplicity and reliability or use a more complex query.
+    //
+    // Actually, we can just fetch all teams the user is in, and then for each team ID, fetch the counts.
+    // Or fetch all data and map it (might be heavy if many users).
+    //
+    // Better approach:
+    // 1. Fetch user's team memberships + team details
+    const { data: userTeams, error } = await supabaseAdmin
       .from('team_members')
       .select(`
         team_id,
@@ -27,13 +36,44 @@ router.get('/', async (req, res) => {
 
     if (error) throw error;
 
-    // Transform response
-    const result = teams.map((t: any) => ({
-      ...t.teams,
-      role: t.role
+    if (!userTeams || userTeams.length === 0) {
+        return res.json([]);
+    }
+
+    const teamIds = userTeams.map((ut: any) => ut.team_id);
+
+    // 2. Fetch member counts for these teams
+    // "rpc" would be best, but let's just do a grouped query if possible or multiple queries.
+    // Supabase JS doesn't support "count group by" easily in one line without rpc.
+    // We'll iterate for now since a user won't be in 100s of teams usually.
+    // Parallelize promises.
+
+    const teamsWithCounts = await Promise.all(userTeams.map(async (t: any) => {
+        const teamId = t.team_id;
+
+        if (!supabaseAdmin) throw new Error('Supabase client is not initialized');
+
+        // Count members
+        const { count: memberCount } = await supabaseAdmin
+            .from('team_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('team_id', teamId);
+
+        // Count events
+        const { count: eventCount } = await supabaseAdmin
+            .from('events')
+            .select('*', { count: 'exact', head: true })
+            .eq('team_id', teamId);
+
+        return {
+            ...t.teams,
+            role: t.role,
+            member_count: memberCount || 0,
+            event_count: eventCount || 0
+        };
     }));
 
-    res.json(result);
+    res.json(teamsWithCounts);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

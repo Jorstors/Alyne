@@ -301,9 +301,13 @@ function EmptyState() {
 
 function EventCard({ event, onEdit, onDelete, currentUserId }: { event: any, onEdit: () => void, onDelete: () => void, currentUserId: string | undefined }) {
   // Determine display date
-  let dateStr = event.created_at
+  let dateStr = event.display_date || event.created_at
   try {
-      dateStr = format(parseISO(event.created_at), 'MMM d, yyyy')
+      if (dateStr.includes('T')) {
+         dateStr = format(parseISO(dateStr), 'MMM d, yyyy')
+      } else {
+         dateStr = format(parseISO(dateStr), 'MMM d, yyyy')
+      }
   } catch (e) {}
 
   const isOwner = event.created_by === currentUserId
@@ -328,7 +332,9 @@ function EventCard({ event, onEdit, onDelete, currentUserId }: { event: any, onE
               <div className="flex items-center gap-4 text-sm">
                 <span className="flex items-center gap-1.5">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
-                  Created: {dateStr}
+                  {/* If it's created_at, say Created:, else say Date: */}
+                  {dateStr === event.display_date ? 'Date: ' : 'Created: '}
+                  {dateStr}
                 </span>
               </div>
             </div>

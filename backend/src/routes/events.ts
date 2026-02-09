@@ -3,6 +3,34 @@ import { supabaseAdmin } from '../supabase';
 
 const router = Router();
 
+// Helper to calculate display date
+const getDisplayDate = (event: any) => {
+    try {
+        const config = event.configuration;
+        if (!config) return event.created_at;
+
+        if (event.event_type === 'specific_dates' && config.dates && config.dates.length > 0) {
+            // Sort dates
+            const sorted = config.dates.sort();
+            // Find first future date
+            const now = new Date().toISOString();
+            const next = sorted.find((d: string) => d >= now.split('T')[0]); // Simple string comparison for YYYY-MM-DD
+            return next || sorted[sorted.length - 1]; // Next upcoming or last one
+        }
+
+        // For days_of_week, we just return created_at for now or a "Weekly" string?
+        // The frontend expects a date string to format usually.
+        // Let's return created_at but maybe adding a flag?
+        // Actually, let's try to return the *next* occurrence of the day.
+        // Too complex for backend right now without moment/date-fns.
+        // Let's return created_at for weekly events but rely on 'event_type' in frontend to show "Weekly".
+        return event.created_at;
+
+    } catch (e) {
+        return event.created_at;
+    }
+}
+
 // GET /api/events - List events for a user
 router.get('/', async (req, res) => {
   const { user_id } = req.query;
@@ -11,18 +39,6 @@ router.get('/', async (req, res) => {
   if (!user_id || typeof user_id !== 'string') return res.status(400).json({ error: 'Missing user_id' });
 
   try {
-    // Complex query: Get events where user is creator OR participant OR valid team member using Database function or raw SQL?
-    // Supabase JS approach:
-    // 1. Events created by user
-    // 2. Events where user is a participant
-    // This is easier to do with 2 queries and merge, or a more complex OR filter.
-
-    // For MVP transparency: Fetch events created by user OR where user is in 'participants'
-    // Actually, getting all events where 'created_by' = user_id is the base.
-    // + events linked to teams the user is in.
-
-    // Let's stick to: Events I created + Events I'm participating in.
-
     // 1. Created by me
     const { data: createdEvents } = await supabaseAdmin
         .from('events')
@@ -48,9 +64,17 @@ router.get('/', async (req, res) => {
 
     // Merge and deduplicate
     const allEvents = [...(createdEvents || []), ...participatedEvents];
-    const uniqueEvents = Array.from(new Map(allEvents.map(item => [item.id, item])).values());
+    const uniqueEventsMap = new Map();
+    allEvents.forEach(item => uniqueEventsMap.set(item.id, item));
+    const uniqueEvents = Array.from(uniqueEventsMap.values());
 
-    res.json(uniqueEvents);
+    // Enrich with display_date
+    const enrichedEvents = uniqueEvents.map(e => ({
+        ...e,
+        display_date: getDisplayDate(e)
+    }));
+
+    res.json(enrichedEvents);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

@@ -150,7 +150,7 @@ export function DashboardPage() {
                     key={event.id}
                     title={event.title}
                     team={event.team_id ? 'Team Event' : 'Personal Event'} // We'd need to fetch team name in a join ideally
-                    date={event.created_at} // TODO: Use actual start date
+                    date={event.display_date || event.created_at}
                     id={event.id}
                 />
             ))}
@@ -179,8 +179,8 @@ export function DashboardPage() {
                     key={team.id}
                     id={team.id}
                     name={team.name}
-                    members={1} // TODO: Fetch count
-                    events={0}
+                    members={team.member_count}
+                    events={team.event_count}
                 />
             ))}
             </div>
@@ -193,7 +193,14 @@ export function DashboardPage() {
 function EventCard({ title, team, date, id }: { title: string; team: string; date: string; id: string }) {
     let displayDate = date
     try {
-        displayDate = format(parseISO(date), 'MMM d, h:mm a')
+        // If it's a full ISO string (created_at), format it nicely.
+        // If it's a YYYY-MM-DD string (specific date), format it differently.
+        if (date.includes('T')) {
+             displayDate = format(parseISO(date), 'MMM d, h:mm a')
+        } else {
+             // It's likely YYYY-MM-DD
+             displayDate = format(parseISO(date), 'MMM d, yyyy')
+        }
     } catch (e) {}
 
   return (

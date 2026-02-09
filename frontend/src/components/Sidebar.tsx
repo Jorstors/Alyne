@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Calendar, Users, Menu, X, LogOut, LayoutDashboard } from 'lucide-react'
+import { Calendar, Users, Menu, X, LogOut, LayoutDashboard, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/components/AuthProvider'
 import { supabase } from '@/lib/supabase'
@@ -54,6 +54,13 @@ const SidebarContent = ({ user, showNav, isActive, onNavItemClick, children, han
             icon={<Calendar className="h-4 w-4" />}
             label="Events"
             active={isActive('/events')}
+            onClick={onNavItemClick}
+          />
+          <NavItem
+            href="/settings"
+            icon={<User className="h-4 w-4" />}
+            label="Settings"
+            active={isActive('/settings')}
             onClick={onNavItemClick}
           />
         </nav>

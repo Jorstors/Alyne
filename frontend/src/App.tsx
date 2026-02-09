@@ -11,6 +11,7 @@ import {
   TeamDetailsPage,
   EventPage,
   JoinTeamPage,
+  SettingsPage,
 } from '@/pages'
 
 import { AuthenticatedLayout } from '@/components/AuthenticatedLayout'
@@ -33,6 +34,7 @@ function App() {
             <Route path="/teams/:id" element={<TeamDetailsPage />} />
             <Route path="/teams/new" element={<CreateTeamPage />} />
             <Route path="/events" element={<EventsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
              {/* Redirect /events/new - For now keeping separate or do we want it in layout?
                  CreateEventPage handles its own auth check/sidebar.
                  User wants it mobile friendly.

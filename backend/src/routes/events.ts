@@ -277,7 +277,7 @@ router.put('/:id', async (req, res) => {
     // 2. Update
     const { data: updatedEvent, error: updateError } = await supabaseAdmin
       .from('events')
-      .update({ title, description })
+      .update({ title, description, status: req.body.status, configuration: req.body.configuration })
       .eq('id', id)
       .select()
       .single();

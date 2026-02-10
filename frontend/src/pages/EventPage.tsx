@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, addDays } from 'date-fns'
 
 import { useAuth } from '@/components/AuthProvider'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -82,37 +82,88 @@ export function EventPage() {
   // Calendar Export Logic
   const getEventDates = () => {
       if (!eventData?.configuration) return null;
-      const { startTime, endTime } = eventData.configuration;
+      const { endTime, finalized_slot } = eventData.configuration;
+      const startTime = eventData.configuration.startTime || '09:00'; // Fallback
+
       let start = new Date();
+      let slotStartOffset = 0; // Minutes from start time
 
       // Determine the single "next" date to allow adding to calendar.
-      // For multi-date events, we usually just add the first one or next upcoming one.
+      if (finalized_slot) {
+          // Parse slotId "row-col"
+          const [row, col] = finalized_slot.split('-').map(Number);
+          slotStartOffset = row * 30;
 
-      if (eventData.event_type === 'specific_dates' && eventData.configuration.dates?.length) {
-          const dates = eventData.configuration.dates.sort();
-          const nowStr = new Date().toISOString().split('T')[0];
-          const nextDate = dates.find((d: string) => d >= nowStr) || dates[dates.length - 1];
-          start = parseISO(nextDate);
-      } else if (eventData.event_type === 'days_of_week' && eventData.configuration.days?.length) {
-          // Find next occurrence (simplification)
-          // Just use today for now if it matches, or upcoming.
-          // Actually, let's just default to today/tomorrow logic if simple.
-          // For MVP, if it's weekly, just set it for the next occurrence of the first day in list.
-          start = new Date(); // TODO: Better logic for weekly
+          if (eventData.event_type === 'specific_dates' && Array.isArray(eventData.configuration.dates)) {
+               // Use a safe access
+               const datesList = eventData.configuration.dates;
+               const dateStr = datesList[col];
+
+               // Sort fallback if needed
+               const sortedDates = [...datesList].sort();
+               const date = dateStr ? parseISO(dateStr) : (sortedDates[col] ? parseISO(sortedDates[col]) : new Date());
+               start = date;
+          } else if (eventData.event_type === 'days_of_week') {
+              // Calculate next occurrence of the day
+              const days = eventData.configuration.days || [];
+              const targetDayName = days[col]; // e.g. "Mon"
+
+              if (targetDayName) {
+                  // Find next date with this day name
+                  // date-fns doesn't have a simple "next Monday" helper that takes a string, so we map it.
+                  const dayMap: {[key: string]: number} = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
+                  const targetDayIndex = dayMap[targetDayName];
+
+                  if (targetDayIndex !== undefined) {
+                      const today = new Date();
+                      const currentDayIndex = today.getDay();
+                      let daysUntil = targetDayIndex - currentDayIndex;
+                      if (daysUntil < 0) daysUntil += 7; // It's passed this week, so next week
+                      if (daysUntil === 0) {
+                          // If today is the day, check if the time has passed?
+                          // For simplicity, if finalized, we assume upcoming.
+                          // But if the time has passed today, maybe next week?
+                          // Let's just default to today if match, or add 7 days if strict upcoming needed.
+                          // For now: today.
+                      }
+                      start = addDays(today, daysUntil);
+                  }
+              }
+          }
+      } else {
+          // Default logic (Next upcoming date)
+          if (eventData.event_type === 'specific_dates' && eventData.configuration.dates?.length) {
+              const dates = eventData.configuration.dates.sort();
+              const nowStr = new Date().toISOString().split('T')[0];
+              const nextDate = dates.find((d: string) => d >= nowStr) || dates[dates.length - 1];
+              start = parseISO(nextDate);
+          }
       }
 
       // Set times
       if (startTime) {
           const [sh, sm] = startTime.split(':').map(Number);
-          start.setHours(sh, sm, 0, 0);
+          // Add slot offset if finalized
+          const totalStartMins = (sh * 60) + sm + slotStartOffset;
+          const finalH = Math.floor(totalStartMins / 60);
+          const finalM = totalStartMins % 60;
+
+          start.setHours(finalH, finalM, 0, 0);
       }
 
       const end = new Date(start);
-      if (endTime) {
-          const [eh, em] = endTime.split(':').map(Number);
-          end.setHours(eh, em, 0, 0);
+      // Duration is fixed 30m for a single slot, but if we allow ranges later...
+      // For now, finalized is single slot (30m)
+      if (finalized_slot) {
+           end.setMinutes(start.getMinutes() + 30);
       } else {
-          end.setHours(start.getHours() + 1); // Default 1h
+           // Default full event duration
+          if (endTime) {
+              const [eh, em] = endTime.split(':').map(Number);
+              end.setHours(eh, em, 0, 0);
+          } else {
+              end.setHours(start.getHours() + 1);
+          }
       }
 
       return { start, end };
@@ -331,9 +382,52 @@ export function EventPage() {
     }
 
     setSlotToNames(mapping)
-    // Total is participants count + 1 if I'm new, or just count if I'm already in list
     setTotalParticipants(amIParticipant ? participants.length : (name ? participants.length + 1 : participants.length))
   }, [participants, selectedSlots, name])
+
+  // Calculate Best Times
+  const bestTimes = useMemo(() => {
+      const slotCounts: { slotId: string; count: number; names: string[] }[] = [];
+      slotToNames.forEach((names, slotId) => {
+          slotCounts.push({ slotId, count: names.length, names });
+      });
+      // Sort by count desc, then by time asc
+      return slotCounts.sort((a, b) => {
+          if (b.count !== a.count) return b.count - a.count;
+          return a.slotId.localeCompare(b.slotId); // Simple string compare for now (works for 0-0 vs 0-1)
+      }).slice(0, 3);
+  }, [slotToNames]);
+
+  const handleFinalize = async (slotId: string) => {
+      if (!eventData?.id) return;
+      try {
+          setActionLoading(true);
+          const updatedConfig = {
+              ...eventData.configuration,
+              finalized_slot: slotId
+          };
+
+          const res = await fetch(`${API_URL}/events/${eventData.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  ...eventData, // Keep other fields
+                  user_id: user?.id,
+                  status: 'scheduled',
+                  configuration: updatedConfig
+              })
+          });
+
+          if (!res.ok) throw new Error('Failed to finalize event');
+          const updated = await res.json();
+          setEventData((prev: any) => ({ ...prev, ...updated }));
+      } catch (e) {
+          console.error(e);
+          alert('Failed to finalize event');
+      } finally {
+          setActionLoading(false);
+      }
+  };
 
   // Get slots for the currently hovered participant in the list
   const hoveredParticipantSlots = useMemo(() => {
@@ -570,6 +664,98 @@ export function EventPage() {
                 </div>
             </div>
 
+            {/* Scheduled Event Banner */}
+            {eventData?.status === 'scheduled' && eventData.configuration?.finalized_slot && (
+                <Card className="bg-primary/5 border-primary/20">
+                    <CardContent className="flex items-center gap-4 p-6">
+                        <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                            <Check className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-lg text-primary">Event Scheduled!</h3>
+                            <p className="text-muted-foreground">
+                                This event has been finalized.
+                                <span className="block font-medium text-foreground mt-1">
+                                    {(() => {
+                                        const { start, end } = getEventDates() || {};
+                                        if (start && end) {
+                                            return `${format(start, 'EEEE, MMMM d')} • ${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`;
+                                        }
+                                        return 'Date and time finalized';
+                                    })()}
+                                </span>
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Best Times Suggestions (Only if not scheduled) */}
+            {eventData?.status !== 'scheduled' && bestTimes.length > 0 && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">Best Time Slots</h3>
+                        <span className="text-sm text-muted-foreground">{totalParticipants} participants</span>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-3">
+                        {bestTimes.map(({ slotId, count, names }) => {
+                             const [row, col] = slotId.split('-').map(Number);
+                             let label = 'Unknown Slot';
+
+                             // Robust fallback for startTime
+                             const configStartTime = eventData.configuration?.startTime || '09:00';
+
+                             // Format Time
+                             if (configStartTime) {
+                                 const [sh, sm] = configStartTime.split(':').map(Number);
+                                 const mins = (sh * 60) + sm + (row * 30);
+                                 const h = Math.floor(mins / 60);
+                                 const m = mins % 60;
+                                 const date = new Date();
+                                 date.setHours(h, m);
+                                 const timeStr = format(date, 'h:mm a');
+
+                                 // Format Date
+                                 let dateStr = '';
+                                 if (eventData.event_type === 'specific_dates' && eventData.configuration.dates) {
+                                     const d = eventData.configuration.dates[col] ? parseISO(eventData.configuration.dates[col]) : null;
+                                     dateStr = d ? format(d, 'EEE, MMM d') : `Day ${col + 1}`;
+                                 } else {
+                                     const days = eventData.configuration.days || [];
+                                     dateStr = days[col] || `Day ${col + 1}`;
+                                 }
+
+                                 label = `${dateStr} • ${timeStr}`;
+                             }
+
+                             return (
+                                <Card key={slotId} className="border-muted bg-card hover:border-primary/50 transition-colors">
+                                    <CardContent className="p-4 flex flex-col gap-3">
+                                        <div className="flex justify-between items-start">
+                                            <div className="font-medium text-sm">{label}</div>
+                                            <div className="flex items-center gap-1 text-xs font-medium bg-secondary px-2 py-1 rounded-full">
+                                                <Users className="h-3 w-3" />
+                                                {count}/{totalParticipants}
+                                            </div>
+                                        </div>
+                                        {/* List a few names */}
+                                        <div className="text-xs text-muted-foreground truncate">
+                                            {names.slice(0, 3).join(', ')}{names.length > 3 && ` +${names.length - 3}`}
+                                        </div>
+
+                                        {user?.id === eventData.created_by && (
+                                            <Button size="sm" variant="default" className="w-full mt-auto" onClick={() => handleFinalize(slotId)} disabled={actionLoading}>
+                                                {actionLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Finalize'}
+                                            </Button>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                             )
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* Split View */}
             <div className="grid xl:grid-cols-2 gap-8 relative z-10">
                 {/* My Availability */}
@@ -731,9 +917,10 @@ interface InteractiveGridProps {
   onSlotToggle: (slotId: string, forceState?: 'add' | 'remove') => void
   startTime: string
   endTime: string
+  readOnly?: boolean
 }
 
-function InteractiveGrid({ columns, selectedSlots, onSlotToggle, startTime, endTime }: InteractiveGridProps) {
+function InteractiveGrid({ columns, selectedSlots, onSlotToggle, startTime, endTime, readOnly }: InteractiveGridProps) {
     const [isDragging, setIsDragging] = useState(false)
     const [dragMode, setDragMode] = useState<'add' | 'remove'>('add')
 
@@ -752,6 +939,7 @@ function InteractiveGrid({ columns, selectedSlots, onSlotToggle, startTime, endT
     const rows = Array.from({ length: rowCount })
 
     const handleMouseDown = (slotId: string) => {
+        if (readOnly) return
         setIsDragging(true)
         const exists = selectedSlots.has(slotId)
         setDragMode(exists ? 'remove' : 'add')

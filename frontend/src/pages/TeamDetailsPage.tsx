@@ -140,12 +140,8 @@ export function TeamDetailsPage() {
                 events.map(event => (
                     <EventCard
                       key={event.id}
-                      id={event.id}
-                      title={event.title}
-                      date={event.created_at} // Replace with actual start date if available
-                      status={isPast(parseISO(event.created_at || new Date().toISOString())) ? 'finalized' : 'pending'}
-                      responses={0} // need real count
-                      total={memberCount}
+                      event={event}
+                      memberCount={memberCount}
                     />
                 ))
             )}
@@ -155,15 +151,47 @@ export function TeamDetailsPage() {
   )
 }
 
-function EventCard({ id, title, date, status, responses, total }: { id: string; title: string; date: string; status: 'pending' | 'finalized'; responses: number; total: number }) {
-  const isFinal = status === 'finalized'
-  let displayDate = date
+function EventCard({ event, memberCount }: { event: any; memberCount: number }) {
+  const isFinal = event.status === 'scheduled'
+  let displayDate = 'Date not set'
+
+  // Try to format date
   try {
-      displayDate = format(parseISO(date), 'MMM d, h:mm a')
+      if (isFinal && event.configuration?.finalized_slot) {
+          // If finalized, try to show the specific date
+          // We might need to replicate getEventDates logic or store a formatted string
+          // For now, let's just show the created date or a "Scheduled" label + Date from config if easy
+          // Re-using the logic from EventPage is hard without moving it to a util.
+          // Let's at least show "Scheduled" or the finalized date if available in a simple way.
+          // Actually, let's just show "Scheduled" and maybe the start date if we can parse it easily.
+          displayDate = 'Scheduled'
+          // If we have dates array
+          if (event.configuration.dates && event.configuration.dates.length > 0) {
+               // This is rough, ideally we use the finalized slot to get exact date.
+               // But for the card, maybe just "Scheduled" is enough or the range?
+          }
+      } else {
+          // Pending
+          if (event.created_at) {
+               displayDate = `Created ${format(parseISO(event.created_at), 'MMM d')}`
+          }
+      }
+
+      // Better display date logic based on what we have
+      if (event.configuration) {
+          if (event.event_type === 'specific_dates' && event.configuration.dates?.length > 0) {
+              const dates = event.configuration.dates.sort()
+              const start = parseISO(dates[0])
+              displayDate = format(start, 'MMM d')
+              if (dates.length > 1) displayDate += ` - ${format(parseISO(dates[dates.length-1]), 'MMM d')}`
+          } else if (event.event_type === 'days_of_week') {
+              displayDate = 'Weekly: ' + (event.configuration.days || []).join(', ')
+          }
+      }
   } catch(e) {}
 
   return (
-    <Link to={`/event/${id}`}>
+    <Link to={`/event/${event.id}`}>
       <Card className="hover:shadow-md transition-shadow cursor-pointer">
         <CardContent className="p-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -171,14 +199,14 @@ function EventCard({ id, title, date, status, responses, total }: { id: string; 
                 {isFinal ? <CheckCircle className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
              </div>
              <div>
-                <h3 className="font-medium text-lg">{title}</h3>
+                <h3 className="font-medium text-lg">{event.title || event.name}</h3>
                 <p className="text-sm text-muted-foreground">{displayDate}</p>
              </div>
           </div>
           <div className="flex items-center gap-6">
               <div className="text-right">
-                  <div className="text-sm font-medium">{responses}/{total} responded</div>
-                  <div className="text-xs text-muted-foreground capitalize">{status}</div>
+                  <div className="text-sm font-medium">0/{memberCount} responded</div>
+                  <div className="text-xs text-muted-foreground capitalize">{isFinal ? 'Finalized' : 'Voting'}</div>
               </div>
                <Button variant="ghost" size="icon">
                   <MoreHorizontal className="h-4 w-4" />
@@ -190,7 +218,3 @@ function EventCard({ id, title, date, status, responses, total }: { id: string; 
   )
 }
 
-// Helper needed if not imported
-function isPast(date: Date) {
-    return date.getTime() < Date.now()
-}

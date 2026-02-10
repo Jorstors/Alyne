@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Sidebar } from '@/components/Sidebar'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Loader2, Copy, Check, Users, ArrowLeft, MoreHorizontal, Edit2, Trash2, Calendar } from 'lucide-react'
+import { Loader2, Copy, Check, Users, ArrowLeft, MoreHorizontal, Edit2, Trash2, Calendar, Clock } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
@@ -82,8 +82,9 @@ export function EventPage() {
   // Calendar Export Logic
   const getEventDates = () => {
       if (!eventData?.configuration) return null;
-      const { endTime, finalized_slot } = eventData.configuration;
+      const { finalized_slot } = eventData.configuration;
       const startTime = eventData.configuration.startTime || '09:00'; // Fallback
+      const duration = eventData.configuration.duration || 30;
 
       let start = new Date();
       let slotStartOffset = 0; // Minutes from start time
@@ -152,19 +153,8 @@ export function EventPage() {
       }
 
       const end = new Date(start);
-      // Duration is fixed 30m for a single slot, but if we allow ranges later...
-      // For now, finalized is single slot (30m)
-      if (finalized_slot) {
-           end.setMinutes(start.getMinutes() + 30);
-      } else {
-           // Default full event duration
-          if (endTime) {
-              const [eh, em] = endTime.split(':').map(Number);
-              end.setHours(eh, em, 0, 0);
-          } else {
-              end.setHours(start.getHours() + 1);
-          }
-      }
+      // Duration logic
+      end.setMinutes(start.getMinutes() + duration);
 
       return { start, end };
   }
@@ -691,12 +681,13 @@ export function EventPage() {
             )}
 
             {/* Best Times Suggestions (Only if not scheduled) */}
-            {eventData?.status !== 'scheduled' && bestTimes.length > 0 && (
-                <div className="space-y-4">
+            {eventData?.status !== 'scheduled' && (
+                <div className="space-y-4 min-h-[140px] transition-all duration-300">
                     <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold">Best Time Slots</h3>
                         <span className="text-sm text-muted-foreground">{totalParticipants} participants</span>
                     </div>
+                    {bestTimes.length > 0 ? (
                     <div className="grid gap-3 md:grid-cols-3">
                         {bestTimes.map(({ slotId, count, names }) => {
                              const [row, col] = slotId.split('-').map(Number);
@@ -713,7 +704,12 @@ export function EventPage() {
                                  const m = mins % 60;
                                  const date = new Date();
                                  date.setHours(h, m);
-                                 const timeStr = format(date, 'h:mm a');
+                                 const startTimeStr = format(date, 'h:mm a');
+
+                                 // Calculate End Time based on duration
+                                 const duration = eventData.configuration?.duration || 30;
+                                 date.setMinutes(date.getMinutes() + duration);
+                                 const endTimeStr = format(date, 'h:mm a');
 
                                  // Format Date
                                  let dateStr = '';
@@ -725,7 +721,7 @@ export function EventPage() {
                                      dateStr = days[col] || `Day ${col + 1}`;
                                  }
 
-                                 label = `${dateStr} • ${timeStr}`;
+                                 label = `${dateStr} • ${startTimeStr} - ${endTimeStr}`;
                              }
 
                              return (
@@ -753,6 +749,13 @@ export function EventPage() {
                              )
                         })}
                     </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl bg-muted/20 text-center space-y-2">
+                             <Clock className="h-8 w-8 text-muted-foreground/50" />
+                             <p className="text-muted-foreground font-medium">Waiting for availability...</p>
+                             <p className="text-xs text-muted-foreground/70">Paint your available times below to generate suggestions.</p>
+                        </div>
+                    )}
                 </div>
             )}
 

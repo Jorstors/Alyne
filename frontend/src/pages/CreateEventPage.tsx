@@ -54,6 +54,17 @@ export function CreateEventPage() {
   // Time State
   const [earliestTime, setEarliestTime] = useState('09:00')
   const [latestTime, setLatestTime] = useState('17:00')
+  const [duration, setDuration] = useState('30') // Default 30 minutes
+
+  // Duration Options
+  const durationOptions = [
+      { value: '15', label: '15 minutes' },
+      { value: '30', label: '30 minutes' },
+      { value: '45', label: '45 minutes' },
+      { value: '60', label: '1 hour' },
+      { value: '90', label: '1.5 hours' },
+      { value: '120', label: '2 hours' },
+  ]
 
   // Determine API URL based on environment
   const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api')
@@ -73,7 +84,8 @@ export function CreateEventPage() {
     // Construct configuration
     const configuration: any = {
         startTime: earliestTime,
-        endTime: latestTime
+        endTime: latestTime,
+        duration: parseInt(duration)
     }
 
     if (mode === 'date') {
@@ -379,6 +391,25 @@ export function CreateEventPage() {
                    <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
 
                   <div className="space-y-6 relative z-10">
+                      <div className="grid gap-2">
+                        <Label htmlFor="duration" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">Duration</Label>
+                        <Select
+                          value={duration}
+                          onValueChange={setDuration}
+                        >
+                          <SelectTrigger id="duration" className="h-11 text-base px-3 rounded-lg border-muted-foreground/20 bg-background/50 hover:bg-background transition-colors focus:ring-primary/20">
+                            <SelectValue placeholder="Select duration" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {durationOptions.map((t) => (
+                              <SelectItem key={`dur-${t.value}`} value={t.value}>
+                                {t.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                       <div className="grid gap-2">
                         <Label htmlFor="earliest" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">No earlier than</Label>
                         <Select

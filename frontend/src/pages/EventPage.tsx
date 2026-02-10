@@ -1003,8 +1003,10 @@ function InteractiveGrid({ columns, selectedSlots, onSlotToggle, startTime, endT
 
                             return (
                                 <div key={i} className="contents">
-                                    <div className={`bg-background px-2 py-1 text-xs text-right -mt-2.5 sticky left-0 z-10 flex items-center justify-end ${minutes === 0 ? '' : ''}`}>
-                                        {timeLabel}
+                                    <div className={`bg-background text-xs text-right sticky left-0 z-30 relative ${minutes === 0 ? '' : ''}`}>
+                                        <div className="absolute top-0 right-2 -translate-y-1/2 bg-background pr-1">
+                                            {timeLabel}
+                                        </div>
                                     </div>
                                     {columns.map((_, j) => {
                                         const slotId = `${i}-${j}`
@@ -1096,15 +1098,16 @@ function HeatmapGrid({
                             const ampm = hour >= 12 ? 'PM' : 'AM'
                             const displayHour = hour > 12 ? hour - 12 : hour
 
-                            // Simplified Label
                             const timeLabel = minutes === 0
                                 ? <span className="font-bold text-foreground/80">{displayHour} <span className="text-[10px] font-normal text-muted-foreground">{ampm}</span></span>
                                 : <span className="text-[10px] text-muted-foreground/60">:30</span>
 
                             return (
                                 <div key={i} className="contents">
-                                    <div className={`bg-background px-2 py-1 text-xs text-right -mt-2.5 sticky left-0 z-10 flex items-center justify-end ${minutes === 0 ? '' : ''}`}>
-                                        {timeLabel}
+                                    <div className={`bg-background text-xs text-right sticky left-0 z-30 relative ${minutes === 0 ? '' : ''}`}>
+                                        <div className="absolute top-0 right-2 -translate-y-1/2 bg-background pr-1">
+                                            {timeLabel}
+                                        </div>
                                     </div>
                                     {columns.map((_, j) => {
                                         const slotId = `${i}-${j}`

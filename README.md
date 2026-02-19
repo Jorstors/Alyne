@@ -3,6 +3,8 @@
 
 Alyne is a modern web application designed to solve the "when are we free?" problem for teams and groups. By combining intuitive availability grids with smart profile defaults, it eliminates the back-and-forth of scheduling meetings.
 
+<img src="/frontend/public/image.png"/>
+
 ## Key Features
 
 *   **Interactive Availability Grids**: specific "paint-to-select" interface allows users to intuitively mark their free time on a calendar grid.

@@ -31,7 +31,6 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/events', eventsRouter);
-app.use('/api/events', eventsRouter);
 app.use('/api/teams', teamsRouter);
 
 // Debug Route to check what URL Vercel is seeing

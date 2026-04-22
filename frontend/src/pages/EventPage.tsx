@@ -184,7 +184,7 @@ export function EventPage() {
       const startISO = start.toISOString();
       const endISO = end.toISOString();
 
-      const url = `https://outlook.live.com/calendar/0/action/compose?subject=${subject}&body=${body}&startdt=${startISO}&enddt=${endISO}`;
+      const url = `https://outlook.office.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject=${subject}&body=${body}&startdt=${startISO}&enddt=${endISO}`;
       window.open(url, '_blank');
   }
 

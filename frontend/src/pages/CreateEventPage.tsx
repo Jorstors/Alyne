@@ -20,6 +20,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { Sidebar } from '@/components/Sidebar'
 
+const DEFAULT_EVENT_TITLE = 'Untitled Event'
+
 export function CreateEventPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -75,11 +77,7 @@ export function CreateEventPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Basic validation
-    if (!eventName.trim()) {
-      alert('Please enter a title')
-      return
-    }
+    const title = eventName.trim() || DEFAULT_EVENT_TITLE
 
     // Construct configuration
     const configuration: any = {
@@ -105,7 +103,7 @@ export function CreateEventPage() {
     }
 
     const payload = {
-      title: eventName,
+      title,
       description: '',
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       event_type: mode === 'date' ? 'specific_dates' : 'days_of_week',
@@ -248,9 +246,8 @@ export function CreateEventPage() {
                   <Input
                     value={eventName}
                     onChange={(e) => setEventName(e.target.value)}
-                    placeholder="New Event Name"
+                    placeholder={DEFAULT_EVENT_TITLE}
                     className="text-3xl md:text-4xl font-bold text-center border-none shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/20 h-auto py-2 px-4 w-full bg-transparent break-words whitespace-normal tracking-tight transition-all"
-                    required
                     autoFocus
                   />
                   {/* Subtle underline effect on focus/hover */}
@@ -482,7 +479,6 @@ export function CreateEventPage() {
                             size="lg"
                             className="h-11 px-6 text-sm font-semibold shadow-md shadow-primary/20 hover:shadow-primary/30 transition-all rounded-full"
                             disabled={
-                                !eventName ||
                                 (mode === 'date' && !dateRange?.from) ||
                                 (mode === 'days' && selectedDays.length === 0)
                             }>

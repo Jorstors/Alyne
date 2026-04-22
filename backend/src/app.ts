@@ -31,18 +31,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/events', eventsRouter);
-app.use('/api/events', eventsRouter);
 app.use('/api/teams', teamsRouter);
-
-// Debug Route to check what URL Vercel is seeing
-app.all('*', (req, res) => {
-    res.status(404).json({
-        error: 'Route not found',
-        path: req.path,
-        originalUrl: req.originalUrl,
-        method: req.method
-    });
-});
 
 // Example: Admin route that client shouldn't do
 app.post('/api/admin/system-check', async (req, res) => {
@@ -60,7 +49,17 @@ app.post('/api/admin/system-check', async (req, res) => {
         return;
     }
 
-    res.json({ users_count: data.users.length });
+    res.json({ message: 'System healthy. Admin key is valid.', userCount: data.users.length });
+});
+
+// Debug Route to check what URL Vercel is seeing
+app.all('*', (req, res) => {
+    res.status(404).json({
+        error: 'Route not found',
+        path: req.path,
+        originalUrl: req.originalUrl,
+        method: req.method
+    });
 });
 
 export default app;

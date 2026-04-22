@@ -174,6 +174,20 @@ export function EventPage() {
       window.open(url, '_blank');
   }
 
+  const addToOutlookCalendar = () => {
+      const dates = getEventDates();
+      if (!dates) return;
+      const { start, end } = dates;
+
+      const subject = encodeURIComponent(eventData.title || 'Event');
+      const body = encodeURIComponent(eventData.description || '');
+      const startISO = start.toISOString();
+      const endISO = end.toISOString();
+
+      const url = `https://outlook.live.com/calendar/0/action/compose?subject=${subject}&body=${body}&startdt=${startISO}&enddt=${endISO}`;
+      window.open(url, '_blank');
+  }
+
   const downloadIcs = () => {
       const dates = getEventDates();
       if (!dates) return;
@@ -660,6 +674,9 @@ export function EventPage() {
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={addToGoogleCalendar}>
                                 Google Calendar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={addToOutlookCalendar}>
+                                Outlook Calendar
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={downloadIcs}>
                                 Download .ics File

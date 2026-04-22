@@ -542,12 +542,10 @@ The `team_members` table is a join table between `teams` and `auth.users`. It in
 
 ## Section 4 — Known Issues and Limitations
 
-1. **No role-based access control on backend routes.** The backend does not validate Supabase JWTs in request headers. Instead, the `user_id` is passed as a request body/query parameter from the frontend, which means API endpoints trust the client to provide the correct identity. In a production environment, requests should be authenticated server-side using `supabase.auth.getUser()` with the user's access token.
+1. **Member management limitations.** While members can leave teams and admins can delete entire teams, there is no UI to manually remove individual members or transfer admin ownership.
 
-2. **Member management limitations.** While members can leave teams and admins can delete entire teams, there is no UI to manually remove individual members or transfer admin ownership.
+2. **No pagination for events or teams.** Both the events list and teams list load all records at once. For users with many events or teams, this could result in slow load times.
 
-3. **No pagination for events or teams.** Both the events list and teams list load all records at once. For users with many events or teams, this could result in slow load times.
+3. **No email notifications.** There is no system for notifying team members when a new event is created or when someone submits their availability. Coordination relies entirely on users sharing the event link manually.
 
-4. **No email notifications.** There is no system for notifying team members when a new event is created or when someone submits their availability. Coordination relies entirely on users sharing the event link manually.
-
-5. **Calendar export does not handle recurring (days_of_week) events gracefully.** The Google Calendar and ICS export logic in `EventPage.tsx` works well for specific-date events but may produce suboptimal results for recurring weekly events since there is no standardized recurrence rule (RRULE) generation.
+4. **Calendar export does not handle recurring (days_of_week) events gracefully.** The Google Calendar and ICS export logic in `EventPage.tsx` works well for specific-date events but may produce suboptimal results for recurring weekly events since there is no standardized recurrence rule (RRULE) generation.

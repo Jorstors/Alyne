@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Sidebar } from '@/components/Sidebar'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Loader2, Copy, Check, Users, ArrowLeft, MoreHorizontal, Edit2, Trash2, Calendar, Clock } from 'lucide-react'
+import { Loader2, Copy, Check, Users, ArrowLeft, MoreHorizontal, Edit2, Trash2, Calendar, Clock, CalendarPlus, Info } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
@@ -29,6 +29,12 @@ export function EventPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [editForm, setEditForm] = useState({ title: '', description: '' })
+
+  // Custom Finalization State
+  const [isCustomFinalizeOpen, setIsCustomFinalizeOpen] = useState(false)
+  const [customDate, setCustomDate] = useState('')
+  const [customStartTime, setCustomStartTime] = useState('09:00')
+  const [customEndTime, setCustomEndTime] = useState('10:00')
 
   const handleEditClick = () => {
       setEditForm({
@@ -82,36 +88,43 @@ export function EventPage() {
   // Calendar Export Logic
   const getEventDates = () => {
       if (!eventData?.configuration) return null;
-      const { finalized_slot } = eventData.configuration;
-      const startTime = eventData.configuration.startTime || '09:00'; // Fallback
+
+      // --- Handle custom finalized time ---
+      const { finalized_custom, finalized_slot } = eventData.configuration;
+
+      if (finalized_custom) {
+          const { date: fDate, startTime: fStart, endTime: fEnd } = finalized_custom;
+          const start = parseISO(fDate);
+          const [sh, sm] = fStart.split(':').map(Number);
+          start.setHours(sh, sm, 0, 0);
+          const end = parseISO(fDate);
+          const [eh, em] = fEnd.split(':').map(Number);
+          end.setHours(eh, em, 0, 0);
+          return { start, end };
+      }
+
+      // --- Handle slot-based finalization ---
+      const startTime = eventData.configuration.startTime || '09:00';
       const duration = eventData.configuration.duration || 30;
 
       let start = new Date();
-      let slotStartOffset = 0; // Minutes from start time
+      let slotStartOffset = 0;
 
-      // Determine the single "next" date to allow adding to calendar.
       if (finalized_slot) {
-          // Parse slotId "row-col"
           const [row, col] = finalized_slot.split('-').map(Number);
           slotStartOffset = row * 30;
 
           if (eventData.event_type === 'specific_dates' && Array.isArray(eventData.configuration.dates)) {
-               // Use a safe access
                const datesList = eventData.configuration.dates;
                const dateStr = datesList[col];
-
-               // Sort fallback if needed
                const sortedDates = [...datesList].sort();
                const date = dateStr ? parseISO(dateStr) : (sortedDates[col] ? parseISO(sortedDates[col]) : new Date());
                start = date;
           } else if (eventData.event_type === 'days_of_week') {
-              // Calculate next occurrence of the day
               const days = eventData.configuration.days || [];
-              const targetDayName = days[col]; // e.g. "Mon"
+              const targetDayName = days[col];
 
               if (targetDayName) {
-                  // Find next date with this day name
-                  // date-fns doesn't have a simple "next Monday" helper that takes a string, so we map it.
                   const dayMap: {[key: string]: number} = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
                   const targetDayIndex = dayMap[targetDayName];
 
@@ -119,20 +132,12 @@ export function EventPage() {
                       const today = new Date();
                       const currentDayIndex = today.getDay();
                       let daysUntil = targetDayIndex - currentDayIndex;
-                      if (daysUntil < 0) daysUntil += 7; // It's passed this week, so next week
-                      if (daysUntil === 0) {
-                          // If today is the day, check if the time has passed?
-                          // For simplicity, if finalized, we assume upcoming.
-                          // But if the time has passed today, maybe next week?
-                          // Let's just default to today if match, or add 7 days if strict upcoming needed.
-                          // For now: today.
-                      }
+                      if (daysUntil < 0) daysUntil += 7;
                       start = addDays(today, daysUntil);
                   }
               }
           }
       } else {
-          // Default logic (Next upcoming date)
           if (eventData.event_type === 'specific_dates' && eventData.configuration.dates?.length) {
               const dates = eventData.configuration.dates.sort();
               const nowStr = new Date().toISOString().split('T')[0];
@@ -141,19 +146,15 @@ export function EventPage() {
           }
       }
 
-      // Set times
       if (startTime) {
           const [sh, sm] = startTime.split(':').map(Number);
-          // Add slot offset if finalized
           const totalStartMins = (sh * 60) + sm + slotStartOffset;
           const finalH = Math.floor(totalStartMins / 60);
           const finalM = totalStartMins % 60;
-
           start.setHours(finalH, finalM, 0, 0);
       }
 
       const end = new Date(start);
-      // Duration logic
       end.setMinutes(start.getMinutes() + duration);
 
       return { start, end };
@@ -394,14 +395,15 @@ export function EventPage() {
           setActionLoading(true);
           const updatedConfig = {
               ...eventData.configuration,
-              finalized_slot: slotId
+              finalized_slot: slotId,
+              finalized_custom: null // Clear custom if using slot
           };
 
           const res = await fetch(`${API_URL}/events/${eventData.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                  ...eventData, // Keep other fields
+                  ...eventData,
                   user_id: user?.id,
                   status: 'scheduled',
                   configuration: updatedConfig
@@ -411,6 +413,43 @@ export function EventPage() {
           if (!res.ok) throw new Error('Failed to finalize event');
           const updated = await res.json();
           setEventData((prev: any) => ({ ...prev, ...updated }));
+      } catch (e) {
+          console.error(e);
+          alert('Failed to finalize event');
+      } finally {
+          setActionLoading(false);
+      }
+  };
+
+  const handleCustomFinalize = async () => {
+      if (!eventData?.id || !customDate || !customStartTime || !customEndTime) return;
+      try {
+          setActionLoading(true);
+          const updatedConfig = {
+              ...eventData.configuration,
+              finalized_slot: null, // Clear slot-based finalization
+              finalized_custom: {
+                  date: customDate,
+                  startTime: customStartTime,
+                  endTime: customEndTime
+              }
+          };
+
+          const res = await fetch(`${API_URL}/events/${eventData.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  ...eventData,
+                  user_id: user?.id,
+                  status: 'scheduled',
+                  configuration: updatedConfig
+              })
+          });
+
+          if (!res.ok) throw new Error('Failed to finalize event');
+          const updated = await res.json();
+          setEventData((prev: any) => ({ ...prev, ...updated }));
+          setIsCustomFinalizeOpen(false);
       } catch (e) {
           console.error(e);
           alert('Failed to finalize event');
@@ -610,6 +649,7 @@ export function EventPage() {
                     <p className="text-muted-foreground mt-1">Paint over the times you are available. Changes are saved automatically.</p>
                 </div>
                 <div className="flex items-center gap-2">
+                    {eventData?.status === 'scheduled' ? (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="lg" className="gap-2 rounded-full hover:bg-muted shadow-sm">
@@ -626,6 +666,12 @@ export function EventPage() {
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
+                    ) : (
+                    <Button variant="outline" size="lg" className="gap-2 rounded-full shadow-sm opacity-60 cursor-not-allowed" disabled>
+                        <Calendar className="h-4 w-4" />
+                        <span className="hidden sm:inline">Add to Calendar</span>
+                    </Button>
+                    )}
 
                     <Button variant="outline" size="lg" onClick={copyLink} className="gap-2 rounded-full hover:bg-muted shadow-sm">
                         {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
@@ -655,7 +701,7 @@ export function EventPage() {
             </div>
 
             {/* Scheduled Event Banner */}
-            {eventData?.status === 'scheduled' && eventData.configuration?.finalized_slot && (
+            {eventData?.status === 'scheduled' && (eventData.configuration?.finalized_slot || eventData.configuration?.finalized_custom) && (
                 <Card className="bg-primary/5 border-primary/20">
                     <CardContent className="flex items-center gap-4 p-6">
                         <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -667,9 +713,9 @@ export function EventPage() {
                                 This event has been finalized.
                                 <span className="block font-medium text-foreground mt-1">
                                     {(() => {
-                                        const { start, end } = getEventDates() || {};
-                                        if (start && end) {
-                                            return `${format(start, 'EEEE, MMMM d')} • ${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`;
+                                        const dates = getEventDates();
+                                        if (dates?.start && dates?.end) {
+                                            return `${format(dates.start, 'EEEE, MMMM d')} • ${format(dates.start, 'h:mm a')} - ${format(dates.end, 'h:mm a')}`;
                                         }
                                         return 'Date and time finalized';
                                     })()}
@@ -678,6 +724,14 @@ export function EventPage() {
                         </div>
                     </CardContent>
                 </Card>
+            )}
+
+            {/* Not-yet-finalized notice */}
+            {eventData?.status !== 'scheduled' && (
+                <div className="flex items-center gap-3 text-sm text-muted-foreground bg-muted/40 border border-border/50 rounded-lg px-4 py-3">
+                    <Info className="h-4 w-4 flex-shrink-0" />
+                    <span>This event hasn't been finalized yet. {user?.id === eventData?.created_by ? 'Choose a time below or set a custom time to finalize.' : 'The organizer will finalize a time once everyone has voted.'} Calendar export will be available after finalization.</span>
+                </div>
             )}
 
             {/* Best Times Suggestions (Only if not scheduled) */}
@@ -755,6 +809,24 @@ export function EventPage() {
                              <p className="text-muted-foreground font-medium">Waiting for availability...</p>
                              <p className="text-xs text-muted-foreground/70">Paint your available times below to generate suggestions.</p>
                         </div>
+                    )}
+
+                    {/* Custom Finalization Option for Event Creator */}
+                    {user?.id === eventData?.created_by && (
+                        <Card className="border-dashed border-2 border-primary/30 bg-primary/5 hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setIsCustomFinalizeOpen(true)}>
+                            <CardContent className="p-4 flex items-center gap-4">
+                                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                                    <CalendarPlus className="h-5 w-5" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="font-medium text-sm">Set a Custom Time</div>
+                                    <div className="text-xs text-muted-foreground">Pick any date and time to finalize this event</div>
+                                </div>
+                                <Button size="sm" variant="outline" className="ml-auto">
+                                    Choose
+                                </Button>
+                            </CardContent>
+                        </Card>
                     )}
                 </div>
             )}
@@ -906,6 +978,56 @@ export function EventPage() {
             <Button variant="destructive" onClick={confirmDelete} disabled={actionLoading}>
               {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Delete Event
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Finalize Dialog */}
+      <Dialog open={isCustomFinalizeOpen} onOpenChange={setIsCustomFinalizeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set a Custom Time</DialogTitle>
+            <DialogDescription>
+              Choose a specific date and time to finalize this event. This will override any suggested time slots.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="custom-date">Date</Label>
+              <Input
+                id="custom-date"
+                type="date"
+                value={customDate}
+                onChange={(e) => setCustomDate(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="custom-start">Start Time</Label>
+                <Input
+                  id="custom-start"
+                  type="time"
+                  value={customStartTime}
+                  onChange={(e) => setCustomStartTime(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="custom-end">End Time</Label>
+                <Input
+                  id="custom-end"
+                  type="time"
+                  value={customEndTime}
+                  onChange={(e) => setCustomEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsCustomFinalizeOpen(false)}>Cancel</Button>
+            <Button onClick={handleCustomFinalize} disabled={actionLoading || !customDate || !customStartTime || !customEndTime}>
+              {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Finalize Event
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -15,6 +15,7 @@ export function TeamsPage() {
   const { user } = useAuth()
   const [teams, setTeams] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     if (!user?.id) return
@@ -40,6 +41,10 @@ export function TeamsPage() {
   const handleLeaveTeam = (teamId: string) => {
     setTeams(prev => prev.filter(t => t.id !== teamId))
   }
+
+  const filteredTeams = teams.filter(team =>
+    team.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   if (loading) {
       return (
@@ -83,7 +88,12 @@ export function TeamsPage() {
       {/* Search */}
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search teams..." className="pl-10" />
+        <Input
+          placeholder="Search teams..."
+          className="pl-10"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
       </div>
 
       {/* Teams Grid */}
@@ -97,8 +107,12 @@ export function TeamsPage() {
                     <Button>Create Your First Team</Button>
                 </Link>
             </div>
+        ) : filteredTeams.length === 0 ? (
+            <div className="text-center py-12 bg-muted/10 rounded-lg">
+                <p className="text-muted-foreground">No teams found matching "{searchQuery}"</p>
+            </div>
         ) : (
-            teams.map(team => (
+            filteredTeams.map(team => (
                 <TeamCard
                     key={team.id}
                     team={team}

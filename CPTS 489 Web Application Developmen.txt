@@ -1,0 +1,493 @@
+CPTS 489 Web Application Development | Project Final Submission
+CPTS 489 Web Application Development
+Project Final Submission
+Group Assignment
+AI USAGE POLICY
+The use of AI tools is OKAY and strongly ENCOURAGED for this assignment.
+However, you must use AI as a TOOL, not as a substitute for understanding. You must OWN
+every inch of your output -- both code and documentation. When questioned about any aspect
+of your work, you are expected to explain and defend it thoroughly.
+• NOT ACCEPTABLE: Saying "the AI did it" when a mistake is pointed out or when asked
+to explain your work.
+• ACCEPTABLE: Using AI to help generate code or documentation, then reviewing,
+understanding, testing, and taking full ownership of the output.
+We aim to give you an experience similar to what you'll encounter in the real world. There’s a
+difference between using AI and misusing AI. Use it responsibly, understand everything you
+submit, and be ready to explain your decisions.
+Assignment Overview
+This is the final submission for your course project. You will deliver a fully functional web
+application along with complete documentation, a demo video, and your full codebase. This
+submission builds directly on your Mid Submission and represents the completed state of your
+application.
+IMPORTANT NOTES
+All team member names must be listed in the submitted documents.
+You must book a viva slot via the Calendly link posted on Canvas. Teams that do not book a
+slot will not receive a grade for the live review component.
+The live review sessions are virtual and conducted via Zoom.
+MANDATORY: Live Review Attendance
+Attending the live review session is mandatory for all teams and all individuals. It is not
+optional.
+CPTS 489 Web Application Development | Project Final Submission
+The instructor will award a grade of 0/100 for the entire assignment to any team or
+individual who does not attend their scheduled review session -- regardless of the
+quality of submitted artifacts. Submitting a perfect PDF, video, and codebase will not
+change this outcome if you do not show up.
+See the Live Review and Viva Session section for booking instructions.
+Stack Requirement
+JavaScript / TypeScript Only -- No Exceptions
+Your entire application -- both client side and server side -- must be written in JavaScript or
+TypeScript. No other programming language is permitted anywhere in the codebase.
+There is no restriction on which JavaScript framework, library, or database you use. The
+stack taught in this course (Express.js + Sequelize + EJS + MySQL) is one valid option. Any
+JavaScript-based or TypeScript-based stack is acceptable as long as it meets the project
+requirements.
+Submissions that include any non-JavaScript / non-TypeScript code on either the
+client or the server will not be graded.
+Deliverables
+You must submit three deliverables (highlighted items):
+Deliverable 1: Completed Report (PDF)
+Format: PDF document
+Expand the document you submitted for the Mid Submission into a full project report. In addition
+to the requirements analysis and UX/UI documentation from the Mid Submission, you must now
+document the implementation of your application. The report should read like professional
+technical documentation—the kind you would hand to a new developer joining your team.
+The implementation documentation must include four required sections, described below. See
+the Appendices at the end of this document for a worked example of each section.
+CPTS 489 Web Application Development | Project Final Submission
+Section 1: MVC Implementation Walkthrough
+Walk through your major use cases and explain the implementation behind each one. For each
+use case, document the route that handles it, the controller logic that runs, the view that is
+rendered, and the models that are read from or written to.
+Use screenshots of your actual running application to support your narration. Less text and
+more annotated screenshots make for a better report. You may use callout bubbles or thinkbubbles to annotate items in a screenshot.
+Think of it this way: in your Mid Submission, you walked through use cases using wireframes
+and mockups. Now replace those wireframes with screenshots of your running application and
+add a section beneath each screenshot explaining the MVC components that make it functional.
+See Appendix A for a complete worked example.
+TIP: Divide the work
+We recommend that each team member takes ownership of documenting a couple of use
+cases. This distributes the documentation workload and ensures everyone can speak to the
+parts they built during the viva.
+Section 2: Route / API Table
+Include a table listing every route or API endpoint in your application. Each row must document
+the HTTP method, the route path, a plain-English description of what the route does, and
+whether authentication is required (and which role).
+This table gives any reader -- including the instructor during the viva -- a quick map of your
+entire backend. It also forces you to think about whether your route structure is clean and
+consistent.
+See Appendix B for a complete worked example.
+Section 3: Data Model / ER Diagram
+Include a visual representation of your data model. This does not need to be a formal ER
+diagram. A clean, readable diagram showing your tables or collections and their relationships is
+sufficient.
+• For relational databases (MySQL, PostgreSQL, SQLite): show tables, primary keys,
+foreign keys, and relationships
+CPTS 489 Web Application Development | Project Final Submission
+• For document databases (MongoDB): show your collections and how documents
+reference or embed each other
+Below the diagram, briefly describe each model or collection in one or two sentences. This is
+the single most useful thing for a new developer trying to understand your codebase.
+See Appendix C for a complete worked example.
+Section 4: Known Issues and Limitations
+List any bugs, incomplete features, unhandled edge cases, or known limitations of your
+application. Every real software project has them. If your list is empty, that is a sign you have
+not tested thoroughly enough.
+Disclosing known issues honestly and professionally may result in a reduced penalty compared
+to issues that are discovered by the instructor during the viva that were never acknowledged.
+However, this section is not a shield. Issues that represent minor bugs, edge cases, or cosmetic
+items are very different from features promised in your use cases but never built. A long list of
+unimplemented features will still reflect on the quality of your submission. The intent for this
+section is to demonstrate professional self-awareness, not to document an unfinished
+application.
+Format this as a numbered or bulleted list. For each item, state what the issue is and, optionally,
+why it was not resolved (e.g., out of scope, time constraints, dependency limitation).
+What NOT to Include
+• Non-functional requirements -- these are requirements about how the system performs
+rather than what it does, such as page load time targets, uptime guarantees, scalability
+goals, or security compliance standards. You do not need to document these for this
+submission.
+Deliverable 2: Demo Video (MP4)
+Format: MP4 video
+Maximum Duration: Approximately 10 minutes
+Record a full walkthrough of your working application. There is no need for slides or a
+PowerPoint presentation—start directly from the login page and demonstrate all the features of
+your application.
+What to Include
+CPTS 489 Web Application Development | Project Final Submission
+• Start from the login page (skip the registration flow -- just log in directly)
+• Demonstrate all major features for all three user roles: primary user, secondary user,
+and admin
+• Show the application working end-to-end, not just individual pages in isolation
+• Make sure all three team members participate in the video
+Submission Requirements
+• Upload the video as an MP4 file directly to Canvas
+• Do NOT submit a YouTube link or any link to an external site.
+• Ensure audio and video quality are clear
+• Stay within the 10-minute limit
+VIDEO TIP
+You do not need to narrate every click. Focus on demonstrating the key flows for each user
+role. Show what each role can and cannot do.
+Deliverable 3: Codebase (ZIP)
+Format: ZIP file
+Submit your complete application codebase as a ZIP file.
+What to Include
+• Your full project source code
+• Do NOT include node_modules. Anyone should be able to run npm install to restore
+dependencies.
+• A README.md file that explains clearly how to set up and run your application locally
+• A database dump so the reviewer can restore your database:
+◦ MySQL / PostgreSQL: Include an SQL dump file (e.g., mysqldump output).
+◦ MongoDB: Include a mongodump export.
+◦ SQLite: No dump needed -- include the .sqlite file directly.
+◦ Other databases: Include whatever export mechanism your database provides.
+README Requirements
+Your README.md must include at minimum:
+1. How to install dependencies (e.g., npm install)
+2. How to configure environment variables (e.g., database connection, .env file)
+CPTS 489 Web Application Development | Project Final Submission
+3. How to restore the database
+4. How to start the application (e.g., npm start, node app.js)
+5. Any other steps needed to get the app running locally
+IMPORTANT: If the reviewer cannot run your app, you lose points.
+A clear README is not optional. Test your own setup instructions on a clean environment
+before submitting.
+Due Dates and Late Policy
+Deadline Date
+Submission Deadline Monday, April 21
+Extended Deadline (with late penalty) Sunday, April 26 (Hard Deadline --
+submission window closes)
+Live Review / Viva Sessions Begin Monday, April 27
+The extended deadline on April 26 is a hard cutoff. The Canvas submission window will close at
+that time. No submissions will be accepted after this date under any circumstances.
+Live Review and Viva Session
+MANDATORY ATTENDANCE
+Attendance is mandatory. Any team or individual who does not attend their scheduled
+session will receive a grade of 0/100 for the entire assignment. This is not limited to
+the live review component -- it applies to the full assignment grade. Submitting all
+three artifacts does not change this outcome if you do not show up.
+As part of the final evaluation, each team will meet with the instructor for a live review session of
+approximately 20 to 30 minutes. The session will be conducted virtually via Zoom.
+What Happens During the Review
+• The instructor will watch the demo video together with the team
+CPTS 489 Web Application Development | Project Final Submission
+• The team will answer questions about the application, the code, and the design
+decisions
+• Individual team members may be asked to explain specific parts of the implementation
+they contributed to
+Individual Contribution Points
+10 points are awarded through a separate Canvas assignment called Individual Contribution.
+This is an individual assignment -- each student receives their own score independently of their
+teammates. It is not part of this group submission.
+Your final project grade = this group submission (out of 90) + Individual Contribution assignment
+(out of 10) = 100 points total.
+The individual score is determined by the instructor during the live review based on:
+• GitHub commit history
+• Quality and depth of your responses during the Q&A
+• Demonstrated understanding of the parts of the codebase you built
+Every team member is expected to be able to speak to all parts of the application, not just the
+parts they personally built. The viva is an assessment of whether you understand your own
+product.
+Booking Your Slot
+• A Calendly link for scheduling will be posted on Canvas in mid-to-late April
+• Each team must book exactly one slot
+• Teams that do not book a slot will not receive a grade for the live review
+component.
+• Some slots may be scheduled in the evening to accommodate all teams. We appreciate
+your flexibility and cooperation.
+Submission Checklist
+Before submitting, verify you have:
+PDF: Completed Report
+• Expanded Mid Submission document with implementation documentation
+• MVC documentation for all major use cases
+• Screenshots of the running application with annotations
+• All team member names listed
+CPTS 489 Web Application Development | Project Final Submission
+MP4: Demo Video
+• Full walkthrough of the working application, starting from the login page
+• All three user roles demonstrated
+• Uploaded directly to Canvas as an MP4 file (not a link)
+• Under 10 minutes
+• All team members participate
+ZIP: Codebase
+• Complete source code
+• No node_modules included
+• README.md with clear setup and run instructions
+• Database dump or export file included
+Live Review
+• Viva slot booked via the Calendly link on Canvas. Attendance is mandatory.
+Failure to attend will result in a grade of 0/100 for the entire assignment, not just the live
+review component.
+IMPORTANT: Live Review is Mandatory -- 0/100 for the Entire Assignment
+Not attending the live review session will result in a grade of 0/100 for the entire
+assignment. This is not limited to the 30-point live review component. Even if you submit a
+complete PDF, video, and codebase, failing to attend the review will result in a zero for the
+full assignment. The live review exists precisely because this is an AI-friendly assignment --
+the review is how your understanding is verified.
+Points Breakdown
+Total: 100 Points
+Category What We Look
+For
+Points
+DELIVERABLE 1: Completed Report (PDF) Four required
+sections
+20
+MVC Implementation Walkthrough Clarity,
+completeness,
+8
+CPTS 489 Web Application Development | Project Final Submission
+annotated
+screenshots
+Route / API Table All endpoints:
+method, path,
+description, auth
+4
+Data Model / ER Diagram Visual clarity,
+accuracy, model
+descriptions
+4
+Known Issues and Limitations Honest, specific,
+professionally
+presented
+2
+Professional Presentation Organization,
+formatting,
+grammar,
+readability
+2
+DELIVERABLE 2: Demo Video (MP4) 20
+Feature Coverage All three roles
+demonstrated
+end to end
+12
+Presentation Quality Clear
+audio/video,
+under 10
+minutes, all
+members
+participate
+5
+Submission Format Uploaded as
+MP4 directly to
+Canvas (not a
+link)
+3
+DELIVERABLE 3: Codebase (ZIP) 20
+Code Completeness Full source, no
+node_modules,
+JS/TS only
+10
+README Quality Setup and run
+instructions are
+clear and
+accurate
+6
+Database Export Correct
+dump/export file
+included and
+restorable
+4
+CPTS 489 Web Application Development | Project Final Submission
+LIVE REVIEW / VIVA Mandatory -- see
+attendance policy
+above
+30
+Application Demo Live
+demonstration of
+working
+application
+15
+Q&A / Technical Understanding Team can
+explain design,
+data model, and
+implementation
+15
+GROUP SUBMISSION TOTAL Graded as a
+team (Canvas:
+Final Project
+Submission)
+90
+Individual Contribution: Separate Canvas Assignment (10 Points)
+The 10 points for individual contribution are awarded through a separate Canvas
+assignment called Individual Contribution. This is an individual assignment, not a group
+assignment -- each student receives their own score.
+Your final project grade = Group Submission (out of 90) + Individual Contribution (out of 10)
+= 100 points total.
+The individual score is determined by the instructor during the live review based on:
+ - GitHub commit history
+ - Quality and depth of your responses during the Q&A
+ - Demonstrated understanding of the parts of the codebase you built
+REMINDER: Not Attending = 0/100 for the Entire Assignment
+The live review is mandatory. Any team or individual who does not attend their scheduled
+session will receive a grade of 0 for the full assignment -- this affects both the group
+submission score and your individual contribution score. This applies even if all three
+artifacts are submitted and are of high quality.
+CPTS 489 Web Application Development | Project Final Submission
+Appendix A: Example MVC Implementation Walkthrough
+The following is a complete example of how to document a use case using the Model-ViewController pattern. Use this as a reference for Section 1 of your report. Notice that no code
+snippets are required -- the goal is to explain what each component does and why, not to paste
+your source code into the report.
+Use Case: Customer Places an Order
+1. The Route
+File: routes/orders.js
+When the customer submits the checkout form, the browser sends a POST request to
+/orders/checkout. This route is protected by a requireAuth middleware that checks whether the
+user is logged in. If the user is not authenticated, they are redirected to the login page before
+the controller ever runs. If authenticated, the request is handed off to the placeOrder function in
+OrderController.
+2. The Controller
+File: controllers/OrderController.js | Function: placeOrder
+The controller is responsible for all business logic. It executes the following steps:
+1. Reads the current user's ID from the session.
+2. Fetches all CartItem records belonging to that user, including the associated Product for
+each item so that the current price is available without a separate query.
+3. Calculates the order total by summing quantity multiplied by price for each cart item.
+4. Creates a new Order record with the user ID, calculated total, and a status of 'pending'.
+5. For each cart item, creates an OrderItem record storing the order ID, product ID,
+quantity, and the price at the time of purchase. The price is copied as a snapshot so that
+future price changes by the vendor do not affect historical order records.
+6. Deletes all CartItem records for the user, clearing their cart.
+7. Redirects the user to the order confirmation page for the newly created order.
+3. The Models
+This use case reads from and writes to four models:
+CPTS 489 Web Application Development | Project Final Submission
+Model Operation What Happens
+CartItem Read, then
+Delete
+All cart items for the user are fetched first. After the order
+is saved, they are deleted to clear the cart.
+Product Read Loaded alongside each CartItem to access the current
+price and product details.
+Order Create A new order record is created with the user ID, total, and
+an initial status of 'pending'.
+OrderItem Create One record per cart item, storing a price snapshot at the
+time of purchase.
+4. The Views
+This use case involves two views. Document both.
+View 1 -- Checkout Form (file: views/orders/checkout.ejs or equivalent)
+This is the page the user sees before placing the order. It displays the cart summary and a
+Place Order button. When the user submits this form, the POST request to /orders/checkout is
+triggered. This is the entry point for this entire use case.
+[ Screenshot: Checkout Page ]
+Annotate: cart items, total, Place Order button
+View 2 -- Order Confirmation (file: views/orders/confirmation.ejs or equivalent)
+This is the page rendered after the order is successfully placed. The controller loads the newly
+created order with all its line items and associated product names, then passes this data to the
+view. The view displays the order number, each line item with quantity and unit price, and the
+total. The view contains no business logic -- it only renders the data it receives.
+[ Screenshot: Order Confirmation Page ]
+Annotate: order ID, line items, total, logged-in user name
+What Makes a Good MVC Walkthrough
+Explain what each component does and why -- you do not need to paste code into the
+report. Use plain English to describe the route, describe the controller logic as numbered
+CPTS 489 Web Application Development | Project Final Submission
+steps, use a table to summarize model interactions, and use a screenshot to show what the
+user sees. Annotate non-obvious decisions such as price snapshotting and explain the
+reasoning behind them.
+CPTS 489 Web Application Development | Project Final Submission
+Appendix B: Example Route / API Table
+The following is a representative Route / API table for a simple marketplace application. Use
+this as a reference for Section 2 of your report. Your table should list every route in your
+application. Routes are organized by feature area for readability, which is recommended.
+Authentication
+Method Route Description Auth Required
+GET /login Render the login page No
+POST /login Authenticate user, create session No
+GET /register Render the registration page No
+POST /register Create a new user account No
+POST /logout Destroy session, redirect to login Yes
+Cart and Checkout (Customer)
+Method Route Description Auth Required
+GET /cart View current user's cart Yes -- Customer
+POST /cart Add a product to the cart Yes -- Customer
+PUT /cart/:itemId Update cart item quantity Yes -- Customer
+DELETE /cart/:itemId Remove item from cart Yes -- Customer
+GET /checkout Render the checkout page Yes -- Customer
+POST /orders/checkout Submit order and clear cart Yes -- Customer
+GET /orders/:id/confirmation Render order confirmation page Yes -- Customer
+Vendor Dashboard
+Method Route Description Auth Required
+GET /vendor/dashboard Vendor home: sales overview Yes -- Vendor
+GET /vendor/products List vendor's products Yes -- Vendor
+GET /vendor/products/new Render add product form Yes -- Vendor
+POST /vendor/products Create a new product listing Yes -- Vendor
+GET /vendor/products/:id/edit Render edit product form Yes -- Vendor
+PUT /vendor/products/:id Update a product listing Yes -- Vendor
+DELETE /vendor/products/:id Delete a product listing Yes -- Vendor
+CPTS 489 Web Application Development | Project Final Submission
+GET /vendor/orders View and manage incoming orders Yes -- Vendor
+PUT /vendor/orders/:id/status Update order status and tracking Yes -- Vendor
+Admin Panel
+Method Route Description Auth Required
+GET /admin/dashboard Admin home: system overview Yes -- Admin
+GET /admin/users List all users Yes -- Admin
+PUT /admin/users/:id/ban Ban or unban a user account Yes -- Admin
+GET /admin/products View and moderate all listings Yes -- Admin
+DELETE /admin/products/:id Remove a product listing Yes -- Admin
+GET /admin/orders View all orders across all vendors Yes -- Admin
+GET /admin/analytics View site-wide analytics Yes -- Admin
+Notes on This Example
+This table covers approximately 25 routes across three roles. Your table may be smaller or
+larger. The key requirements: every route is listed, the method and path are exact, the
+description is plain English, and the auth column clearly states who can access the route.
+For REST API stacks (e.g., Express API + React frontend), this table is especially important
+because the routes are not visible in any view file -- this table is the only place they are all
+documented together.
+CPTS 489 Web Application Development | Project Final Submission
+Appendix C: Example Data Model / ER Diagram
+The following is an example of how to document your data model for Section 3 of your report. In
+your actual report, lead with the diagram image (created using any tool: draw.io, dbdiagram.io,
+MySQL Workbench, Lucidchart, or a clean hand-drawn sketch). Follow the diagram with written
+descriptions of each model.
+The example below shows the text portion only, since a visual diagram cannot be embedded
+here. Substitute the placeholder below with your actual diagram image.
+Diagram Placeholder
+[ Insert your ER diagram image here ]
+Suggested tools: draw.io | dbdiagram.io | MySQL Workbench | Lucidchart
+Model Descriptions
+User
+Field Type Notes
+id INTEGER Primary key, auto-increment
+email STRING Unique, used for login
+password STRING Bcrypt hashed, never stored in plain text
+role ENUM 'customer', 'vendor', or 'admin'
+isBanned BOOLEAN Set by admin to restrict access
+createdAt DATE Automatically managed by Sequelize
+The User model is the central identity record. Role controls what the user can do. A single User
+can be a customer, a vendor, or an admin -- there is no separate table for each role.
+Order
+Field Type Notes
+id INTEGER Primary key, auto-increment
+userId INTEGER Foreign key -> User.id (the customer)
+CPTS 489 Web Application Development | Project Final Submission
+total DECIMAL Total order value at time of purchase
+status ENUM 'pending', 'processing', 'shipped', 'delivered', 'cancelled'
+createdAt DATE Timestamp of when the order was placed
+An Order belongs to one User (customer) and has many OrderItems. The total is stored directly
+on the Order so it does not need to be recalculated from line items, which may change over
+time.
+OrderItem
+Field Type Notes
+id INTEGER Primary key, auto-increment
+orderId INTEGER Foreign key -> Order.id
+productId INTEGER Foreign key -> Product.id
+quantity INTEGER Number of units purchased
+price DECIMAL Unit price at time of purchase (snapshot -- not a live FK
+to Product.price)
+OrderItem is a join table between Order and Product that also carries data. The price field is a
+snapshot of the product price at time of purchase. This ensures historical orders stay accurate
+even if the vendor changes the price later.
+Relationship Summary
+Relationship Type Description
+User -> Product One-to-Many A vendor (User) has many Products
+User -> Order One-to-Many A customer (User) has many Orders
+User -> CartItem One-to-Many A user has many CartItems (their active cart)
+Order -> OrderItem One-to-Many An Order has many OrderItems (line items)
+Product -> OrderItem One-to-Many A Product appears in many OrderItems across
+orders
+Product -> CartItem One-to-Many A Product can be in many users' carts
+simultaneously
+What Makes a Good Data Model Section
+A diagram image first, then a field-level table for every model, then a short prose paragraph
+explaining the model's role and any non-obvious design decisions, then a relationship
+summary. The notes column in each table is the most valuable part -- it explains intent, not
+just structure.

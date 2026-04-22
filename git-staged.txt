@@ -1,0 +1,418 @@
+diff --git a/backend/src/middleware/auth.ts b/backend/src/middleware/auth.ts
+index 9b3e3e8..5cc872b 100644
+--- a/backend/src/middleware/auth.ts
++++ b/backend/src/middleware/auth.ts
+@@ -1,5 +1,5 @@
+ import { Request, Response, NextFunction } from 'express';
+-import { supabaseAdmin } from '../lib/supabase';
++import { supabaseAdmin } from '../supabase';
+ 
+ declare global {
+   namespace Express {
+@@ -10,6 +10,8 @@ declare global {
+ }
+ 
+ export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
++  if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured: supabaseAdmin is null' });
++
+   const authHeader = req.headers.authorization || '';
+   if (!authHeader.startsWith('Bearer ')) {
+     return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+@@ -27,6 +29,8 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
+ };
+ 
+ export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
++  if (!supabaseAdmin) return next();
++
+   const authHeader = req.headers.authorization || '';
+   if (authHeader.startsWith('Bearer ')) {
+     const token = authHeader.replace('Bearer ', '');
+diff --git a/backend/src/routes/events.ts b/backend/src/routes/events.ts
+index 3d96c71..db5bbaf 100644
+--- a/backend/src/routes/events.ts
++++ b/backend/src/routes/events.ts
+@@ -1,3 +1,4 @@
++import { requireAuth, optionalAuth } from '../middleware/auth';
+ import { Router } from 'express';
+ import { supabaseAdmin } from '../supabase';
+ 
+@@ -32,8 +33,8 @@ const getDisplayDate = (event: any) => {
+ }
+ 
+ // GET /api/events - List events for a user
+-router.get('/', async (req, res) => {
+-  const { user_id } = req.query;
++router.get('/', requireAuth, async (req, res) => {
++  const user_id = req.user.id;
+ 
+   if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured' });
+   if (!user_id || typeof user_id !== 'string') return res.status(400).json({ error: 'Missing user_id' });
+@@ -81,7 +82,7 @@ router.get('/', async (req, res) => {
+ });
+ 
+ // GET /api/events/:id - Get event details + participants
+-router.get('/:id', async (req, res) => {
++router.get('/:id', async (req, res) => { // Public route
+   const { id } = req.params;
+ 
+   if (!supabaseAdmin) {
+@@ -119,14 +120,13 @@ router.get('/:id', async (req, res) => {
+ });
+ 
+ // POST /api/events - Create a new event
+-router.post('/', async (req, res) => {
+-  const {
+-    title,
++router.post('/', optionalAuth, async (req, res) => {
++  const { title,
+     description,
+     timezone,
+     event_type,
+     configuration,
+-    user_id, // Authenticated user ID (optional)
++    
+     team_id  // Optional team linkage
+   } = req.body;
+ 
+@@ -145,7 +145,7 @@ router.post('/', async (req, res) => {
+           timezone,
+           event_type, // 'specific_dates' or 'days_of_week'
+           configuration, // JSON object
+-          created_by: user_id || null, // If null, it's an anonymous/guest event
++          created_by: req.user?.id || null, // If null, it's an anonymous/guest event
+           team_id: team_id || null
+         }
+       ])
+@@ -162,7 +162,7 @@ router.post('/', async (req, res) => {
+ });
+ 
+ // POST /api/events/:id/participate - Submit availability
+-router.post('/:id/participate', async (req, res) => {
++router.post('/:id/participate', optionalAuth, async (req, res) => {
+   const { id } = req.params;
+   const { name, email, availability, user_id } = req.body;
+ 
+@@ -236,7 +236,7 @@ router.post('/:id/participate', async (req, res) => {
+             .from('participants')
+             .insert([{
+                 event_id: id,
+-                user_id: user_id || null,
++                user_id: req.user?.id || null,
+                 name,
+                 email: email || null,
+                 availability
+@@ -292,9 +292,9 @@ router.put('/:id', async (req, res) => {
+ });
+ 
+ // DELETE /api/events/:id - Delete event
+-router.delete('/:id', async (req, res) => {
++router.delete('/:id', requireAuth, async (req, res) => {
+   const { id } = req.params;
+-  const { user_id } = req.query; // Pass as query param for delete
++  const user_id = req.user.id; // Pass as query param for delete
+ 
+   if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured' });
+   if (!user_id || typeof user_id !== 'string') return res.status(401).json({ error: 'Unauthorized' });
+diff --git a/backend/src/routes/teams.ts b/backend/src/routes/teams.ts
+index 48914e5..e838f50 100644
+--- a/backend/src/routes/teams.ts
++++ b/backend/src/routes/teams.ts
+@@ -1,11 +1,12 @@
++import { requireAuth } from '../middleware/auth';
+ import { Router } from 'express';
+ import { supabaseAdmin } from '../supabase';
+ 
+ const router = Router();
+ 
+ // GET /api/teams - List teams for authenticated user
+-router.get('/', async (req, res) => {
+-  const { user_id } = req.query; // Expect user_id passed from frontend (which gets it from auth)
++router.get('/', requireAuth, async (req, res) => {
++  const user_id = req.user.id; // Expect user_id passed from frontend (which gets it from auth)
+ 
+   if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured' });
+   if (!user_id || typeof user_id !== 'string') return res.status(400).json({ error: 'Missing user_id' });
+@@ -80,8 +81,9 @@ router.get('/', async (req, res) => {
+ });
+ 
+ // POST /api/teams - Create a new team
+-router.post('/', async (req, res) => {
+-  const { name, user_id } = req.body;
++router.post('/', requireAuth, async (req, res) => {
++  const { name } = req.body;
++  const user_id = req.user.id;
+ 
+   if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured' });
+   if (!user_id) return res.status(401).json({ error: 'Unauthorized' });
+@@ -115,7 +117,7 @@ router.post('/', async (req, res) => {
+ });
+ 
+ // GET /api/teams/:id - Get Team Details
+-router.get('/:id', async (req, res) => {
++router.get('/:id', requireAuth, async (req, res) => {
+   const { id } = req.params;
+ 
+   if (!supabaseAdmin) return res.status(500).json({ error: 'Server configuration error' });
+@@ -163,9 +165,9 @@ router.get('/:id', async (req, res) => {
+ });
+ 
+ // POST /api/teams/:id/join - Join a team
+-router.post('/:id/join', async (req, res) => {
++router.post('/:id/join', requireAuth, async (req, res) => {
+   const { id } = req.params;
+-  const { user_id } = req.body;
++  const user_id = req.user.id;
+ 
+   if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured' });
+   if (!user_id) return res.status(401).json({ error: 'Unauthorized' });
+@@ -217,12 +219,12 @@ router.post('/:id/join', async (req, res) => {
+ });
+ 
+ // Delete a team (admin only)
+-router.delete('/:id', async (req, res) => {
++router.delete('/:id', requireAuth, async (req, res) => {
+   try {
+     if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+ 
+     const { id } = req.params;
+-    const { user_id } = req.body;
++    const user_id = req.user.id;
+ 
+     if (!user_id) {
+       return res.status(400).json({ error: 'user_id is required' });
+@@ -274,12 +276,12 @@ router.delete('/:id', async (req, res) => {
+ });
+ 
+ // Leave a team
+-router.delete('/:id/leave', async (req, res) => {
++router.delete('/:id/leave', requireAuth, async (req, res) => {
+   try {
+     if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+ 
+     const { id } = req.params;
+-    const { user_id } = req.body;
++    const user_id = req.user.id;
+ 
+     if (!user_id) {
+       return res.status(400).json({ error: 'user_id is required' });
+diff --git a/frontend/src/pages/CreateEventPage.tsx b/frontend/src/pages/CreateEventPage.tsx
+index 1ae0a66..31dd911 100644
+--- a/frontend/src/pages/CreateEventPage.tsx
++++ b/frontend/src/pages/CreateEventPage.tsx
+@@ -19,6 +19,7 @@ import {
+ import { Checkbox } from "@/components/ui/checkbox"
+ import { cn } from "@/lib/utils"
+ import { Sidebar } from '@/components/Sidebar'
++import { apiFetch } from '@/lib/api'
+ 
+ const DEFAULT_EVENT_TITLE = 'Untitled Event'
+ 
+@@ -113,7 +114,7 @@ export function CreateEventPage() {
+     }
+ 
+     try {
+-        const res = await fetch(`${API_URL}/events`, {
++        const res = await apiFetch(`${API_URL}/events`, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify(payload)
+diff --git a/frontend/src/pages/CreateTeamPage.tsx b/frontend/src/pages/CreateTeamPage.tsx
+index 8df429c..40cf75c 100644
+--- a/frontend/src/pages/CreateTeamPage.tsx
++++ b/frontend/src/pages/CreateTeamPage.tsx
+@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
+ import { ArrowLeft, Loader2 } from 'lucide-react'
+ import { useState } from 'react'
+ import { useAuth } from '@/components/AuthProvider'
++import { apiFetch } from '@/lib/api'
+ 
+ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+ 
+@@ -21,7 +22,7 @@ export function CreateTeamPage() {
+ 
+     try {
+         setLoading(true)
+-        const res = await fetch(`${API_URL}/teams`, {
++        const res = await apiFetch(`${API_URL}/teams`, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({
+diff --git a/frontend/src/pages/DashboardPage.tsx b/frontend/src/pages/DashboardPage.tsx
+index e0f2149..4a9c9fe 100644
+--- a/frontend/src/pages/DashboardPage.tsx
++++ b/frontend/src/pages/DashboardPage.tsx
+@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
+ import { useAuth } from '@/components/AuthProvider'
+ import { useEffect, useState } from 'react'
+ import { format, parseISO } from 'date-fns'
++import { apiFetch } from '@/lib/api'
+ 
+ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+ 
+@@ -25,8 +26,8 @@ export function DashboardPage() {
+         // Fetch specific data for dashboard
+         // In a real app we might want dedicated dashboard endpoints or use Promise.all
+         const [eventsRes, teamsRes] = await Promise.all([
+-            fetch(`${API_URL}/events?user_id=${user?.id}`),
+-            fetch(`${API_URL}/teams?user_id=${user?.id}`)
++            apiFetch(`${API_URL}/events?user_id=${user?.id}`),
++            apiFetch(`${API_URL}/teams?user_id=${user?.id}`)
+         ])
+ 
+         if (eventsRes.ok) {
+diff --git a/frontend/src/pages/EventPage.tsx b/frontend/src/pages/EventPage.tsx
+index 82d054a..23e0343 100644
+--- a/frontend/src/pages/EventPage.tsx
++++ b/frontend/src/pages/EventPage.tsx
+@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
+ import { Loader2, Copy, Check, Users, ArrowLeft, MoreHorizontal, Edit2, Trash2, Calendar, Clock, CalendarPlus, Info } from 'lucide-react'
+ import { Textarea } from '@/components/ui/textarea'
+ import { cn } from '@/lib/utils'
++import { apiFetch } from '@/lib/api'
+ 
+ export function EventPage() {
+   const { id } = useParams()
+@@ -48,7 +49,7 @@ export function EventPage() {
+       if (!eventData?.id) return
+       try {
+           setActionLoading(true)
+-          const res = await fetch(`${API_URL}/events/${eventData.id}`, {
++          const res = await apiFetch(`${API_URL}/events/${eventData.id}`, {
+               method: 'PUT',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({
+@@ -72,7 +73,7 @@ export function EventPage() {
+       if (!eventData?.id) return
+       try {
+           setActionLoading(true)
+-          const res = await fetch(`${API_URL}/events/${eventData.id}?user_id=${user?.id}`, {
++          const res = await apiFetch(`${API_URL}/events/${eventData.id}?user_id=${user?.id}`, {
+               method: 'DELETE'
+           })
+           if (!res.ok) throw new Error('Failed to delete event')
+@@ -297,7 +298,7 @@ export function EventPage() {
+   useEffect(() => {
+     async function fetchEvent() {
+       try {
+-        const res = await fetch(`${API_URL}/events/${id}`)
++        const res = await apiFetch(`${API_URL}/events/${id}`)
+         if (!res.ok) throw new Error('Event not found')
+         const data = await res.json()
+         setEventData(data)
+@@ -413,7 +414,7 @@ export function EventPage() {
+               finalized_custom: null // Clear custom if using slot
+           };
+ 
+-          const res = await fetch(`${API_URL}/events/${eventData.id}`, {
++          const res = await apiFetch(`${API_URL}/events/${eventData.id}`, {
+               method: 'PUT',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({
+@@ -449,7 +450,7 @@ export function EventPage() {
+               }
+           };
+ 
+-          const res = await fetch(`${API_URL}/events/${eventData.id}`, {
++          const res = await apiFetch(`${API_URL}/events/${eventData.id}`, {
+               method: 'PUT',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({
+@@ -487,7 +488,7 @@ export function EventPage() {
+   useEffect(() => {
+       if (!id) return
+       const interval = setInterval(() => {
+-          fetch(`${API_URL}/events/${id}`)
++          apiFetch(`${API_URL}/events/${id}`)
+             .then(res => res.ok ? res.json() : null)
+             .then(data => {
+                 if (data) {
+@@ -505,7 +506,7 @@ export function EventPage() {
+ 
+     const timer = setTimeout(async () => {
+       try {
+-        const res = await fetch(`${API_URL}/events/${id}/participate`, {
++        const res = await apiFetch(`${API_URL}/events/${id}/participate`, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({
+diff --git a/frontend/src/pages/JoinTeamPage.tsx b/frontend/src/pages/JoinTeamPage.tsx
+index 6ad1ebe..c5988c1 100644
+--- a/frontend/src/pages/JoinTeamPage.tsx
++++ b/frontend/src/pages/JoinTeamPage.tsx
+@@ -5,6 +5,7 @@ import { useAuth } from '@/components/AuthProvider'
+ import { Loader2, Users, AlertCircle } from 'lucide-react'
+ import { Button } from '@/components/ui/button'
+ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
++import { apiFetch } from '@/lib/api'
+ 
+ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+ 
+@@ -32,7 +33,7 @@ export function JoinTeamPage() {
+       try {
+         if (!teamId) throw new Error('Invalid invite link')
+ 
+-        const res = await fetch(`${API_URL}/teams/${teamId}/join`, {
++        const res = await apiFetch(`${API_URL}/teams/${teamId}/join`, {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json'
+diff --git a/frontend/src/pages/TeamDetailsPage.tsx b/frontend/src/pages/TeamDetailsPage.tsx
+index 348af71..0a3a491 100644
+--- a/frontend/src/pages/TeamDetailsPage.tsx
++++ b/frontend/src/pages/TeamDetailsPage.tsx
+@@ -8,6 +8,7 @@ import { useAuth } from '@/components/AuthProvider'
+ import { useEffect, useState } from 'react'
+ import { format, parseISO } from 'date-fns'
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
++import { apiFetch } from '@/lib/api'
+ 
+ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+ 
+@@ -27,7 +28,7 @@ export function TeamDetailsPage() {
+     async function fetchTeamDetails() {
+       try {
+         setLoading(true)
+-        const res = await fetch(`${API_URL}/teams/${id}`)
++        const res = await apiFetch(`${API_URL}/teams/${id}`)
+         if (!res.ok) {
+             if (res.status === 404) throw new Error('Team not found')
+             throw new Error('Failed to fetch team')
+@@ -53,7 +54,7 @@ export function TeamDetailsPage() {
+     if (!id || !user?.id) return
+     try {
+       setDeleteLoading(true)
+-      const res = await fetch(`${API_URL}/teams/${id}`, {
++      const res = await apiFetch(`${API_URL}/teams/${id}`, {
+         method: 'DELETE',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ user_id: user.id })
+diff --git a/frontend/src/pages/TeamsPage.tsx b/frontend/src/pages/TeamsPage.tsx
+index 77cff5d..41bbbec 100644
+--- a/frontend/src/pages/TeamsPage.tsx
++++ b/frontend/src/pages/TeamsPage.tsx
+@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+ import { useAuth } from '@/components/AuthProvider'
+ import { useEffect, useState } from 'react'
++import { apiFetch } from '@/lib/api'
+ 
+ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+ 
+@@ -23,7 +24,7 @@ export function TeamsPage() {
+     async function fetchTeams() {
+       try {
+         setLoading(true)
+-        const res = await fetch(`${API_URL}/teams?user_id=${user?.id}`)
++        const res = await apiFetch(`${API_URL}/teams?user_id=${user?.id}`)
+         if (res.ok) {
+             const data = await res.json()
+             setTeams(data)
+@@ -138,7 +139,7 @@ function TeamCard({ team, role, userId, onLeave }: { team: any, role: string, us
+     try {
+       setLeaveLoading(true)
+       setLeaveError(null)
+-      const res = await fetch(`${API_URL}/teams/${team.id}/leave`, {
++      const res = await apiFetch(`${API_URL}/teams/${team.id}/leave`, {
+         method: 'DELETE',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ user_id: userId })

@@ -6,11 +6,15 @@ import { Label } from '@/components/ui/label'
 import { ArrowRight } from 'lucide-react'
 import { useState } from 'react'
 
+const DEFAULT_EVENT_TITLE = 'Untitled Event'
+
 export function AnonymousEventPage() {
   const [step, setStep] = useState<'create' | 'availability'>('create')
+  const [eventTitle, setEventTitle] = useState('')
+  const resolvedEventTitle = eventTitle.trim() || DEFAULT_EVENT_TITLE
 
   if (step === 'availability') {
-    return <AvailabilityStep />
+    return <AvailabilityStep title={resolvedEventTitle} />
   }
 
   return (
@@ -32,7 +36,12 @@ export function AnonymousEventPage() {
             <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); setStep('availability'); }}>
               <div className="space-y-2">
                 <Label htmlFor="title">Event title</Label>
-                <Input id="title" placeholder="e.g., Team Dinner" />
+                <Input
+                  id="title"
+                  value={eventTitle}
+                  onChange={(e) => setEventTitle(e.target.value)}
+                  placeholder={DEFAULT_EVENT_TITLE}
+                />
               </div>
 
               <div className="space-y-2">
@@ -95,7 +104,7 @@ export function AnonymousEventPage() {
   )
 }
 
-function AvailabilityStep() {
+function AvailabilityStep({ title }: { title: string }) {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
   const times = ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
 
@@ -114,7 +123,7 @@ function AvailabilityStep() {
 
         <Card className="shadow-xl">
           <CardHeader>
-            <CardTitle>Team Dinner</CardTitle>
+            <CardTitle>{title}</CardTitle>
             <CardDescription>
               Click and drag to mark when you're available. Green = available, yellow = maybe.
             </CardDescription>

@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea' // New import
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Calendar, Search, Clock, MoreHorizontal, Plus, Trash2, Edit2, Loader2 } from 'lucide-react'
+import { Calendar, Search, Clock, MoreHorizontal, Plus, Trash2, Edit2, Loader2, CheckCircle } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
@@ -317,8 +317,8 @@ function EventCard({ event, onEdit, onDelete, currentUserId }: { event: any, onE
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-              <Clock className="h-6 w-6" />
+            <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${event.status === 'scheduled' ? 'bg-green-100 text-green-600' : 'bg-primary/10 text-primary'}`}>
+              {event.status === 'scheduled' ? <CheckCircle className="h-6 w-6" /> : <Clock className="h-6 w-6" />}
             </div>
             <div>
               <h3 className="font-semibold text-lg mb-1">

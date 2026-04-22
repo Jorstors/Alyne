@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Calendar, Users, Clock, ArrowRight, MoreHorizontal } from 'lucide-react'
+import { Calendar, Users, Clock, ArrowRight, MoreHorizontal, CheckCircle } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import { useAuth } from '@/components/AuthProvider'
@@ -149,9 +149,10 @@ export function DashboardPage() {
                  <EventCard
                     key={event.id}
                     title={event.title}
-                    team={event.team_id ? 'Team Event' : 'Personal Event'} // We'd need to fetch team name in a join ideally
+                    team={event.team_id ? 'Team Event' : 'Personal Event'}
                     date={event.display_date || event.created_at}
                     id={event.id}
+                    status={event.status}
                 />
             ))}
             </div>
@@ -190,15 +191,13 @@ export function DashboardPage() {
   )
 }
 
-function EventCard({ title, team, date, id }: { title: string; team: string; date: string; id: string }) {
+function EventCard({ title, team, date, id, status }: { title: string; team: string; date: string; id: string; status?: string }) {
+    const isFinalized = status === 'scheduled'
     let displayDate = date
     try {
-        // If it's a full ISO string (created_at), format it nicely.
-        // If it's a YYYY-MM-DD string (specific date), format it differently.
         if (date.includes('T')) {
              displayDate = format(parseISO(date), 'MMM d, h:mm a')
         } else {
-             // It's likely YYYY-MM-DD
              displayDate = format(parseISO(date), 'MMM d, yyyy')
         }
     } catch (e) {}
@@ -208,8 +207,8 @@ function EventCard({ title, team, date, id }: { title: string; team: string; dat
         <Card className="hover:shadow-md transition-shadow cursor-pointer">
         <CardContent className="flex items-center justify-between p-4">
             <div className="flex items-center gap-4">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                <Clock className="h-5 w-5" />
+            <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${isFinalized ? 'bg-green-100 text-green-600' : 'bg-primary/10 text-primary'}`}>
+                {isFinalized ? <CheckCircle className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
             </div>
             <div>
                 <h3 className="font-medium">{title}</h3>

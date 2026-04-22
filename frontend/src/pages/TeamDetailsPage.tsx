@@ -1,20 +1,27 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Users, Plus, Search, ArrowLeft, MoreHorizontal, CheckCircle, Clock, Loader2, Copy } from 'lucide-react'
+import { Users, Plus, Search, ArrowLeft, MoreHorizontal, CheckCircle, Clock, Loader2, Copy, Shield, User, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
 export function TeamDetailsPage() {
   const { id } = useParams()
+  const { user } = useAuth()
+  const navigate = useNavigate()
   const [team, setTeam] = useState<any>(null)
   const [events, setEvents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [membersOpen, setMembersOpen] = useState(false)
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   useEffect(() => {
     async function fetchTeamDetails() {
@@ -27,26 +34,9 @@ export function TeamDetailsPage() {
         }
         const data = await res.json()
         setTeam(data)
-        // Note: The /teams/:id endpoint currently returns members and can be extended to return *team events*.
-        // For now, if the endpoint doesn't return events, we might need a separate call or update the backend.
-        // Assuming the backend endpoint returns a .events array or similar based on previous checks,
-        // OR we just show mock events for now if that part is missing in backend?
-        // Let's check what I wrote in backend.
-        // Re-reading backend code (memory): fetching `teams` with `team_members`.
-        // Wait, I didn't actually implement "fetch events for specific team" in the *backend* explicitly as a joined list in the single team getter?
-        // Actually, let's look at what data.events might be if I included it.
-        // If not, I'll default to empty array or look for it.
-        // Based on `teams.ts`: `teams:team_id (*)` ... wait, let's assume we need to fetch events separately if not there.
-        // But let's try to see if we can get it or just render what we have.
 
         if (data.events) {
             setEvents(data.events)
-        } else {
-            // Fallback: Fetch events filtered by this team_id if we have such an endpoint?
-            // "GET /api/events?team_id=..." ?
-            // My events endpoint was "GET /api/events" (user's events).
-            // I might need to filter client side or backend side.
-            // For now, let's just leave events empty if not provided, to avoid breakage.
         }
 
       } catch (err: any) {
@@ -59,11 +49,34 @@ export function TeamDetailsPage() {
     if (id) fetchTeamDetails()
   }, [id])
 
+  const handleDeleteTeam = async () => {
+    if (!id || !user?.id) return
+    try {
+      setDeleteLoading(true)
+      const res = await fetch(`${API_URL}/teams/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id })
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to delete team')
+      }
+      navigate('/teams')
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
   if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
   if (error) return <div className="flex h-screen items-center justify-center text-destructive">{error}</div>
   if (!team) return <div className="flex h-screen items-center justify-center">Team not found</div>
 
   const memberCount = team.members?.length || 0
+  const members = team.members || []
+  const isAdmin = members.some((m: any) => m.user_id === user?.id && m.role === 'admin')
 
   return (
     <>
@@ -117,8 +130,82 @@ export function TeamDetailsPage() {
                         <span className="sm:hidden">New Event</span>
                     </Button>
                  </Link>
+                 {isAdmin && (
+                    <Button variant="outline" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setIsDeleteOpen(true)}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                 )}
             </div>
         </div>
+      </div>
+
+      {/* Team Members — Collapsible */}
+      <div className="mb-8">
+        <button
+          onClick={() => setMembersOpen(!membersOpen)}
+          className="w-full flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <Users className="h-5 w-5 text-primary" />
+            <span className="font-semibold text-base">Team Members</span>
+            <span className="text-xs bg-muted px-2 py-0.5 rounded-full font-medium text-muted-foreground">{memberCount}</span>
+          </div>
+          {membersOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        </button>
+
+        {membersOpen && (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 animate-in slide-in-from-top-2 duration-200">
+            {members.map((member: any) => {
+              const isMe = member.user_id === user?.id || member.id === user?.id
+              const rawName = isMe ? (user?.user_metadata?.name || member.name) : member.name
+              const memberName = (rawName && rawName !== 'User') ? rawName : (member.email?.split('@')[0] || 'Unknown')
+              const avatarUrl = isMe ? (user?.user_metadata?.avatar_url || member.avatar_url) : member.avatar_url
+
+              const memberIsAdmin = member.role === 'admin'
+              let joinDate = ''
+              try {
+                joinDate = member.joined_at ? format(parseISO(member.joined_at), 'MMM d, yyyy') : ''
+              } catch {}
+
+              return (
+                <Card key={member.user_id || member.id} className="hover:shadow-sm transition-shadow">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <Avatar className={`h-10 w-10 border-2 ${memberIsAdmin ? 'border-primary' : 'border-border'}`}>
+                      {avatarUrl && <AvatarImage src={avatarUrl} alt={memberName} />}
+                      <AvatarFallback className={`text-sm font-bold ${memberIsAdmin ? 'bg-primary/10 text-primary' : ''}`}>
+                        {memberName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm truncate">{memberName}</span>
+                        {memberIsAdmin && (
+                          <span className="flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary flex-shrink-0">
+                            <Shield className="h-3 w-3" />
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                      {member.email && (
+                        <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                      )}
+                      {joinDate && (
+                        <p className="text-xs text-muted-foreground">Joined {joinDate}</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+
+            {members.length === 0 && (
+              <div className="col-span-full text-center py-8 border-2 border-dashed rounded-lg bg-muted/20">
+                <User className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground">No members found</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Events List */}
@@ -147,6 +234,25 @@ export function TeamDetailsPage() {
             )}
          </div>
       </div>
+
+      {/* Delete Team Dialog */}
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete "{team.name}"?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete the team, remove all members, and unlink all associated events.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsDeleteOpen(false)} disabled={deleteLoading}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteTeam} disabled={deleteLoading}>
+              {deleteLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete Team
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
@@ -155,29 +261,15 @@ function EventCard({ event, memberCount }: { event: any; memberCount: number }) 
   const isFinal = event.status === 'scheduled'
   let displayDate = 'Date not set'
 
-  // Try to format date
   try {
       if (isFinal && event.configuration?.finalized_slot) {
-          // If finalized, try to show the specific date
-          // We might need to replicate getEventDates logic or store a formatted string
-          // For now, let's just show the created date or a "Scheduled" label + Date from config if easy
-          // Re-using the logic from EventPage is hard without moving it to a util.
-          // Let's at least show "Scheduled" or the finalized date if available in a simple way.
-          // Actually, let's just show "Scheduled" and maybe the start date if we can parse it easily.
           displayDate = 'Scheduled'
-          // If we have dates array
-          if (event.configuration.dates && event.configuration.dates.length > 0) {
-               // This is rough, ideally we use the finalized slot to get exact date.
-               // But for the card, maybe just "Scheduled" is enough or the range?
-          }
       } else {
-          // Pending
           if (event.created_at) {
                displayDate = `Created ${format(parseISO(event.created_at), 'MMM d')}`
           }
       }
 
-      // Better display date logic based on what we have
       if (event.configuration) {
           if (event.event_type === 'specific_dates' && event.configuration.dates?.length > 0) {
               const dates = event.configuration.dates.sort()
@@ -217,4 +309,3 @@ function EventCard({ event, memberCount }: { event: any; memberCount: number }) 
     </Link>
   )
 }
-

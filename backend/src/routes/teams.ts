@@ -216,4 +216,114 @@ router.post('/:id/join', async (req, res) => {
   }
 });
 
+// Delete a team (admin only)
+router.delete('/:id', async (req, res) => {
+  try {
+    if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+
+    const { id } = req.params;
+    const { user_id } = req.body;
+
+    if (!user_id) {
+      return res.status(400).json({ error: 'user_id is required' });
+    }
+
+    // Check if user is an admin of this team
+    const { data: membership, error: memberError } = await supabaseAdmin
+      .from('team_members')
+      .select('role')
+      .eq('team_id', id)
+      .eq('user_id', user_id)
+      .single();
+
+    if (memberError || !membership) {
+      return res.status(403).json({ error: 'You are not a member of this team' });
+    }
+
+    if (membership.role !== 'admin') {
+      return res.status(403).json({ error: 'Only team admins can delete a team' });
+    }
+
+    // Delete team members first
+    const { error: membersDeleteError } = await supabaseAdmin
+      .from('team_members')
+      .delete()
+      .eq('team_id', id);
+
+    if (membersDeleteError) throw membersDeleteError;
+
+    // Unlink events from this team (set team_id to null instead of deleting events)
+    await supabaseAdmin
+      .from('events')
+      .update({ team_id: null })
+      .eq('team_id', id);
+
+    // Delete the team
+    const { error: teamDeleteError } = await supabaseAdmin
+      .from('teams')
+      .delete()
+      .eq('id', id);
+
+    if (teamDeleteError) throw teamDeleteError;
+
+    res.json({ message: 'Team deleted successfully' });
+  } catch (error: any) {
+    console.error('Delete team error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Leave a team
+router.delete('/:id/leave', async (req, res) => {
+  try {
+    if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+
+    const { id } = req.params;
+    const { user_id } = req.body;
+
+    if (!user_id) {
+      return res.status(400).json({ error: 'user_id is required' });
+    }
+
+    // Check if user is a member
+    const { data: membership, error: memberError } = await supabaseAdmin
+      .from('team_members')
+      .select('*')
+      .eq('team_id', id)
+      .eq('user_id', user_id)
+      .single();
+
+    if (memberError || !membership) {
+      return res.status(404).json({ error: 'You are not a member of this team' });
+    }
+
+    // If user is admin, check if there are other admins
+    if (membership.role === 'admin') {
+      const { data: admins } = await supabaseAdmin
+        .from('team_members')
+        .select('id')
+        .eq('team_id', id)
+        .eq('role', 'admin');
+
+      if (!admins || admins.length <= 1) {
+        return res.status(400).json({ error: 'Cannot leave: you are the only admin. Delete the team or transfer ownership first.' });
+      }
+    }
+
+    // Remove the member
+    const { error: deleteError } = await supabaseAdmin
+      .from('team_members')
+      .delete()
+      .eq('team_id', id)
+      .eq('user_id', user_id);
+
+    if (deleteError) throw deleteError;
+
+    res.json({ message: 'Successfully left the team' });
+  } catch (error: any) {
+    console.error('Leave team error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

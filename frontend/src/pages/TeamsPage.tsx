@@ -1,10 +1,11 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Users, Plus, Search, MoreHorizontal, Settings } from 'lucide-react'
+import { Users, Plus, Search, MoreHorizontal, Eye, LogOut, Loader2 } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
 
@@ -35,6 +36,10 @@ export function TeamsPage() {
 
     fetchTeams()
   }, [user?.id])
+
+  const handleLeaveTeam = (teamId: string) => {
+    setTeams(prev => prev.filter(t => t.id !== teamId))
+  }
 
   if (loading) {
       return (
@@ -98,6 +103,8 @@ export function TeamsPage() {
                     key={team.id}
                     team={team}
                     role={team.role === 'admin' ? 'Leader' : 'Member'}
+                    userId={user?.id}
+                    onLeave={handleLeaveTeam}
                 />
             ))
         )}
@@ -106,11 +113,39 @@ export function TeamsPage() {
   )
 }
 
-function TeamCard({ team, role }: { team: any, role: string }) {
-  // We need to fetch team members count if not provided, for now hardcode 1 or fetch
-  // The list endpoint returns minimal data. Let's assume just showing name/role is fine for MVP.
+function TeamCard({ team, role, userId, onLeave }: { team: any, role: string, userId: string | undefined, onLeave: (teamId: string) => void }) {
+  const navigate = useNavigate()
+  const [isLeaveOpen, setIsLeaveOpen] = useState(false)
+  const [leaveLoading, setLeaveLoading] = useState(false)
+  const [leaveError, setLeaveError] = useState<string | null>(null)
+
+  const handleLeave = async () => {
+    if (!userId) return
+    try {
+      setLeaveLoading(true)
+      setLeaveError(null)
+      const res = await fetch(`${API_URL}/teams/${team.id}/leave`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId })
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to leave team')
+      }
+
+      setIsLeaveOpen(false)
+      onLeave(team.id)
+    } catch (err: any) {
+      setLeaveError(err.message)
+    } finally {
+      setLeaveLoading(false)
+    }
+  }
 
   return (
+    <>
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
@@ -138,12 +173,14 @@ function TeamCard({ team, role }: { team: any, role: string }) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
+                <DropdownMenuItem onClick={() => navigate(`/teams/${team.id}`)}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  View members
                 </DropdownMenuItem>
-                <DropdownMenuItem>View members</DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive">Leave team</DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setIsLeaveOpen(true)}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Leave team
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -158,5 +195,30 @@ function TeamCard({ team, role }: { team: any, role: string }) {
         </div>
       </CardContent>
     </Card>
+
+    {/* Leave Confirmation Dialog */}
+    <Dialog open={isLeaveOpen} onOpenChange={setIsLeaveOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Leave "{team.name}"?</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to leave this team? You'll need a new invite link to rejoin.
+          </DialogDescription>
+        </DialogHeader>
+        {leaveError && (
+          <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3">
+            {leaveError}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setIsLeaveOpen(false)} disabled={leaveLoading}>Cancel</Button>
+          <Button variant="destructive" onClick={handleLeave} disabled={leaveLoading}>
+            {leaveLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Leave Team
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }

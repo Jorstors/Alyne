@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Users, Plus, Search, MoreHorizontal, Eye, LogOut, Loader2 } from 'lucide-react'
+import { Users, Plus, Search, MoreHorizontal, Eye, LogOut, Loader2, Trash2 } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
@@ -134,6 +134,10 @@ function TeamCard({ team, role, userId, onLeave }: { team: any, role: string, us
   const [leaveLoading, setLeaveLoading] = useState(false)
   const [leaveError, setLeaveError] = useState<string | null>(null)
 
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
   const handleLeave = async () => {
     if (!userId) return
     try {
@@ -156,6 +160,30 @@ function TeamCard({ team, role, userId, onLeave }: { team: any, role: string, us
       setLeaveError(err.message)
     } finally {
       setLeaveLoading(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!userId) return
+    try {
+      setDeleteLoading(true)
+      setDeleteError(null)
+      const res = await apiFetch(`${API_URL}/teams/${team.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to delete team')
+      }
+
+      setIsDeleteOpen(false)
+      onLeave(team.id) // Reuse onLeave since it removes the card from the UI
+    } catch (err: any) {
+      setDeleteError(err.message)
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -192,10 +220,18 @@ function TeamCard({ team, role, userId, onLeave }: { team: any, role: string, us
                   <Eye className="h-4 w-4 mr-2" />
                   View members
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setIsLeaveOpen(true)}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Leave team
-                </DropdownMenuItem>
+
+                {role === 'Leader' ? (
+                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setIsDeleteOpen(true)}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete team
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setIsLeaveOpen(true)}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Leave team
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -230,6 +266,30 @@ function TeamCard({ team, role, userId, onLeave }: { team: any, role: string, us
           <Button variant="destructive" onClick={handleLeave} disabled={leaveLoading}>
             {leaveLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Leave Team
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Delete Confirmation Dialog */}
+    <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete "{team.name}"?</DialogTitle>
+          <DialogDescription>
+            Are you absolutely sure? This will instantly delete the team and all of its associated events forever. This cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        {deleteError && (
+          <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3">
+            {deleteError}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setIsDeleteOpen(false)} disabled={deleteLoading}>Cancel</Button>
+          <Button variant="destructive" onClick={handleDelete} disabled={deleteLoading}>
+            {deleteLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Delete Team
           </Button>
         </DialogFooter>
       </DialogContent>

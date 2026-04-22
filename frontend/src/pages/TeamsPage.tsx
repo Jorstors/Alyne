@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
+import { apiFetch } from '@/lib/api'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -23,7 +24,7 @@ export function TeamsPage() {
     async function fetchTeams() {
       try {
         setLoading(true)
-        const res = await fetch(`${API_URL}/teams?user_id=${user?.id}`)
+        const res = await apiFetch(`${API_URL}/teams?user_id=${user?.id}`)
         if (res.ok) {
             const data = await res.json()
             setTeams(data)
@@ -138,7 +139,7 @@ function TeamCard({ team, role, userId, onLeave }: { team: any, role: string, us
     try {
       setLeaveLoading(true)
       setLeaveError(null)
-      const res = await fetch(`${API_URL}/teams/${team.id}/leave`, {
+      const res = await apiFetch(`${API_URL}/teams/${team.id}/leave`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId })

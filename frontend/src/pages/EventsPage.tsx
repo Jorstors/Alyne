@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
 import { format, parseISO } from 'date-fns'
+import { apiFetch } from '@/lib/api'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -37,7 +38,7 @@ export function EventsPage() {
       if (!deletingEvent) return
       try {
           setActionLoading(true)
-          const res = await fetch(`${API_URL}/events/${deletingEvent.id}?user_id=${user?.id}`, {
+          const res = await apiFetch(`${API_URL}/events/${deletingEvent.id}?user_id=${user?.id}`, {
               method: 'DELETE'
           })
 
@@ -66,7 +67,7 @@ export function EventsPage() {
       if (!editingEvent) return
       try {
           setActionLoading(true)
-          const res = await fetch(`${API_URL}/events/${editingEvent.id}`, {
+          const res = await apiFetch(`${API_URL}/events/${editingEvent.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -96,7 +97,7 @@ export function EventsPage() {
     async function fetchEvents() {
       try {
         setLoading(true)
-        const res = await fetch(`${API_URL}/events?user_id=${user?.id}`)
+        const res = await apiFetch(`${API_URL}/events?user_id=${user?.id}`)
         if (res.ok) {
             const data = await res.json()
             setEvents(data)

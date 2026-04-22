@@ -8,6 +8,7 @@ import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
+import { apiFetch } from '@/lib/api'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -27,7 +28,7 @@ export function TeamDetailsPage() {
     async function fetchTeamDetails() {
       try {
         setLoading(true)
-        const res = await fetch(`${API_URL}/teams/${id}`)
+        const res = await apiFetch(`${API_URL}/teams/${id}`)
         if (!res.ok) {
             if (res.status === 404) throw new Error('Team not found')
             throw new Error('Failed to fetch team')
@@ -53,7 +54,7 @@ export function TeamDetailsPage() {
     if (!id || !user?.id) return
     try {
       setDeleteLoading(true)
-      const res = await fetch(`${API_URL}/teams/${id}`, {
+      const res = await apiFetch(`${API_URL}/teams/${id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: user.id })

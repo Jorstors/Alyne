@@ -5,6 +5,7 @@ import { useAuth } from '@/components/AuthProvider'
 import { Loader2, Users, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { apiFetch } from '@/lib/api'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -32,7 +33,7 @@ export function JoinTeamPage() {
       try {
         if (!teamId) throw new Error('Invalid invite link')
 
-        const res = await fetch(`${API_URL}/teams/${teamId}/join`, {
+        const res = await apiFetch(`${API_URL}/teams/${teamId}/join`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

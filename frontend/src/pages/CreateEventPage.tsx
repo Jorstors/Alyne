@@ -19,6 +19,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { Sidebar } from '@/components/Sidebar'
+import { apiFetch } from '@/lib/api'
 
 const DEFAULT_EVENT_TITLE = 'Untitled Event'
 
@@ -113,7 +114,7 @@ export function CreateEventPage() {
     }
 
     try {
-        const res = await fetch(`${API_URL}/events`, {
+        const res = await apiFetch(`${API_URL}/events`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Loader2, Copy, Check, Users, ArrowLeft, MoreHorizontal, Edit2, Trash2, Calendar, Clock, CalendarPlus, Info } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import { apiFetch } from '@/lib/api'
 
 export function EventPage() {
   const { id } = useParams()
@@ -48,7 +49,7 @@ export function EventPage() {
       if (!eventData?.id) return
       try {
           setActionLoading(true)
-          const res = await fetch(`${API_URL}/events/${eventData.id}`, {
+          const res = await apiFetch(`${API_URL}/events/${eventData.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -72,7 +73,7 @@ export function EventPage() {
       if (!eventData?.id) return
       try {
           setActionLoading(true)
-          const res = await fetch(`${API_URL}/events/${eventData.id}?user_id=${user?.id}`, {
+          const res = await apiFetch(`${API_URL}/events/${eventData.id}?user_id=${user?.id}`, {
               method: 'DELETE'
           })
           if (!res.ok) throw new Error('Failed to delete event')
@@ -297,7 +298,7 @@ export function EventPage() {
   useEffect(() => {
     async function fetchEvent() {
       try {
-        const res = await fetch(`${API_URL}/events/${id}`)
+        const res = await apiFetch(`${API_URL}/events/${id}`)
         if (!res.ok) throw new Error('Event not found')
         const data = await res.json()
         setEventData(data)
@@ -413,7 +414,7 @@ export function EventPage() {
               finalized_custom: null // Clear custom if using slot
           };
 
-          const res = await fetch(`${API_URL}/events/${eventData.id}`, {
+          const res = await apiFetch(`${API_URL}/events/${eventData.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -449,7 +450,7 @@ export function EventPage() {
               }
           };
 
-          const res = await fetch(`${API_URL}/events/${eventData.id}`, {
+          const res = await apiFetch(`${API_URL}/events/${eventData.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -487,7 +488,7 @@ export function EventPage() {
   useEffect(() => {
       if (!id) return
       const interval = setInterval(() => {
-          fetch(`${API_URL}/events/${id}`)
+          apiFetch(`${API_URL}/events/${id}`)
             .then(res => res.ok ? res.json() : null)
             .then(data => {
                 if (data) {
@@ -505,7 +506,7 @@ export function EventPage() {
 
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`${API_URL}/events/${id}/participate`, {
+        const res = await apiFetch(`${API_URL}/events/${id}/participate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

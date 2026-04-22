@@ -1,3 +1,4 @@
+import { requireAuth, optionalAuth } from '../middleware/auth';
 import { Router } from 'express';
 import { supabaseAdmin } from '../supabase';
 
@@ -32,8 +33,8 @@ const getDisplayDate = (event: any) => {
 }
 
 // GET /api/events - List events for a user
-router.get('/', async (req, res) => {
-  const { user_id } = req.query;
+router.get('/', requireAuth, async (req, res) => {
+  const user_id = req.user.id;
 
   if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured' });
   if (!user_id || typeof user_id !== 'string') return res.status(400).json({ error: 'Missing user_id' });
@@ -81,7 +82,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/events/:id - Get event details + participants
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res) => { // Public route
   const { id } = req.params;
 
   if (!supabaseAdmin) {
@@ -119,14 +120,13 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/events - Create a new event
-router.post('/', async (req, res) => {
-  const {
-    title,
+router.post('/', optionalAuth, async (req, res) => {
+  const { title,
     description,
     timezone,
     event_type,
     configuration,
-    user_id, // Authenticated user ID (optional)
+    
     team_id  // Optional team linkage
   } = req.body;
 
@@ -145,7 +145,7 @@ router.post('/', async (req, res) => {
           timezone,
           event_type, // 'specific_dates' or 'days_of_week'
           configuration, // JSON object
-          created_by: user_id || null, // If null, it's an anonymous/guest event
+          created_by: req.user?.id || null, // If null, it's an anonymous/guest event
           team_id: team_id || null
         }
       ])
@@ -162,7 +162,7 @@ router.post('/', async (req, res) => {
 });
 
 // POST /api/events/:id/participate - Submit availability
-router.post('/:id/participate', async (req, res) => {
+router.post('/:id/participate', optionalAuth, async (req, res) => {
   const { id } = req.params;
   const { name, email, availability, user_id } = req.body;
 
@@ -236,7 +236,7 @@ router.post('/:id/participate', async (req, res) => {
             .from('participants')
             .insert([{
                 event_id: id,
-                user_id: user_id || null,
+                user_id: req.user?.id || null,
                 name,
                 email: email || null,
                 availability
@@ -292,9 +292,9 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/events/:id - Delete event
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const { user_id } = req.query; // Pass as query param for delete
+  const user_id = req.user.id; // Pass as query param for delete
 
   if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured' });
   if (!user_id || typeof user_id !== 'string') return res.status(401).json({ error: 'Unauthorized' });

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { supabaseAdmin } from '../lib/supabase';
+import { supabaseAdmin } from '../supabase';
 
 declare global {
   namespace Express {
@@ -10,6 +10,8 @@ declare global {
 }
 
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
+  if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured: supabaseAdmin is null' });
+
   const authHeader = req.headers.authorization || '';
   if (!authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing or invalid Authorization header' });
@@ -27,6 +29,8 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 };
 
 export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
+  if (!supabaseAdmin) return next();
+
   const authHeader = req.headers.authorization || '';
   if (authHeader.startsWith('Bearer ')) {
     const token = authHeader.replace('Bearer ', '');

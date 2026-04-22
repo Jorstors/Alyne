@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
 import { format, parseISO } from 'date-fns'
+import { apiFetch } from '@/lib/api'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -25,8 +26,8 @@ export function DashboardPage() {
         // Fetch specific data for dashboard
         // In a real app we might want dedicated dashboard endpoints or use Promise.all
         const [eventsRes, teamsRes] = await Promise.all([
-            fetch(`${API_URL}/events?user_id=${user?.id}`),
-            fetch(`${API_URL}/teams?user_id=${user?.id}`)
+            apiFetch(`${API_URL}/events?user_id=${user?.id}`),
+            apiFetch(`${API_URL}/teams?user_id=${user?.id}`)
         ])
 
         if (eventsRes.ok) {

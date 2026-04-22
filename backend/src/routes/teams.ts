@@ -1,11 +1,12 @@
+import { requireAuth } from '../middleware/auth';
 import { Router } from 'express';
 import { supabaseAdmin } from '../supabase';
 
 const router = Router();
 
 // GET /api/teams - List teams for authenticated user
-router.get('/', async (req, res) => {
-  const { user_id } = req.query; // Expect user_id passed from frontend (which gets it from auth)
+router.get('/', requireAuth, async (req, res) => {
+  const user_id = req.user.id; // Expect user_id passed from frontend (which gets it from auth)
 
   if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured' });
   if (!user_id || typeof user_id !== 'string') return res.status(400).json({ error: 'Missing user_id' });
@@ -80,8 +81,9 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/teams - Create a new team
-router.post('/', async (req, res) => {
-  const { name, user_id } = req.body;
+router.post('/', requireAuth, async (req, res) => {
+  const { name } = req.body;
+  const user_id = req.user.id;
 
   if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured' });
   if (!user_id) return res.status(401).json({ error: 'Unauthorized' });
@@ -115,7 +117,7 @@ router.post('/', async (req, res) => {
 });
 
 // GET /api/teams/:id - Get Team Details
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
 
   if (!supabaseAdmin) return res.status(500).json({ error: 'Server configuration error' });
@@ -163,9 +165,9 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/teams/:id/join - Join a team
-router.post('/:id/join', async (req, res) => {
+router.post('/:id/join', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const { user_id } = req.body;
+  const user_id = req.user.id;
 
   if (!supabaseAdmin) return res.status(500).json({ error: 'Server misconfigured' });
   if (!user_id) return res.status(401).json({ error: 'Unauthorized' });
@@ -217,12 +219,12 @@ router.post('/:id/join', async (req, res) => {
 });
 
 // Delete a team (admin only)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
     if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
 
     const { id } = req.params;
-    const { user_id } = req.body;
+    const user_id = req.user.id;
 
     if (!user_id) {
       return res.status(400).json({ error: 'user_id is required' });
@@ -274,12 +276,12 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Leave a team
-router.delete('/:id/leave', async (req, res) => {
+router.delete('/:id/leave', requireAuth, async (req, res) => {
   try {
     if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
 
     const { id } = req.params;
-    const { user_id } = req.body;
+    const user_id = req.user.id;
 
     if (!user_id) {
       return res.status(400).json({ error: 'user_id is required' });

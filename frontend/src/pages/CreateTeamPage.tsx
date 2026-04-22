@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/components/AuthProvider'
+import { apiFetch } from '@/lib/api'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -21,7 +22,7 @@ export function CreateTeamPage() {
 
     try {
         setLoading(true)
-        const res = await fetch(`${API_URL}/teams`, {
+        const res = await apiFetch(`${API_URL}/teams`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
